@@ -854,8 +854,6 @@ window.exportExcel = function() {
 }
 
 // ── GOOGLE CALENDAR ────────────────────────────────────
-let calTokens = JSON.parse(localStorage.getItem('cal_tokens') || 'null');
-
 function showToast(msg, duration=3000) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -863,131 +861,99 @@ function showToast(msg, duration=3000) {
   setTimeout(() => t.classList.remove('show'), duration);
 }
 
-function isCalConnected() {
-  return calTokens && calTokens.access_token;
-}
-
-function updateCalBtn() {
-  const btn = document.getElementById('cal-btn');
-  if (!btn) return;
-  btn.title = isCalConnected() ? 'Google Calendar conectado — toque para sincronizar' : 'Conectar Google Calendar';
-  btn.style.background = isCalConnected() ? '#EAF3DE' : '#fff';
-}
-
-window.handleCalendarBtn = function() {
-  if (isCalConnected()) {
-    syncFromCalendar();
-  } else {
-    window.location.href = '/api/calendar-auth';
+window.handleCalendarBtn = async function() {
+  if (confirm('Importar eventos do Google Calendar da ortopbarueri@gmail.com para o MK SurgiCal?\n\nIsso é recomendado fazer apenas uma vez.')) {
+    await importFromCalendar();
   }
 }
 
 async function createCalendarEvent(caseData) {
-  if (!isCalConnected()) return;
   try {
     const resp = await fetch('/api/calendar-sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'create',
-        accessToken: calTokens.access_token,
-        refreshToken: calTokens.refresh_token,
-        caseData,
-        calendarId: 'primary'
-      })
+      body: JSON.stringify({ action: 'create', caseData })
     });
     const data = await resp.json();
     if (data.id) {
       showToast('✓ Evento criado no Google Calendar');
-    } else if (data.error) {
-      console.error('Calendar event error:', data.error);
+    } else {
+      console.error('Calendar event error:', data);
     }
   } catch(err) {
     console.error('Calendar sync error:', err);
   }
 }
 
-async function syncFromCalendar() {
-  if (!isCalConnected()) return;
-  showToast('Sincronizando com Google Calendar...', 5000);
+async function importFromCalendar() {
+  showToast('Importando do Google Calendar...', 10000);
   try {
-    const now = new Date();
-    const future = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const now = new Date('2024-01-01').toISOString();
+    const future = new Date('2026-12-31').toISOString();
     const resp = await fetch('/api/calendar-sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'fetch',
-        accessToken: calTokens.access_token,
-        refreshToken: calTokens.refresh_token,
-        dateMin: now.toISOString(),
-        dateMax: future.toISOString(),
-        calendarId: 'primary'
-      })
+      body: JSON.stringify({ action: 'fetch', dateMin: now, dateMax: future })
     });
     const data = await resp.json();
-    if (data.items) {
-      let added = 0;
-      for (const event of data.items) {
-        const dateStr = event.start?.date || event.start?.dateTime?.split('T')[0];
-        if (!dateStr) continue;
-        const title = event.summary || '';
-        const desc = event.description || '';
-        const exists = state.cases.some(c => c.calEventId === event.id);
-        if (!exists && title) {
-          const nc = {
-            nome: title.split(' — ')[0] || title,
-            lado: title.includes('Direito') ? 'D' : title.includes('Esquerdo') ? 'E' : title.includes('Bilateral') ? 'B' : '',
-            data: dateStr,
-            diag: desc.match(/Diagnóstico: (.+)/)?.[1] || '',
-            proc: desc.match(/Procedimento: (.+)/)?.[1] || '',
-            rh: desc.match(/RH: (.+)/)?.[1] || '',
-            tel1: desc.match(/Tel: (.+)/)?.[1] || '',
-            ocupacao: desc.match(/Ocupação: (.+)/)?.[1] || '',
-            resumo: '', ef: '', imagem: '',
-            examImages: [], reportImages: [], chartImage: null,
-            calEventId: event.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            idade: 0, tel2: ''
-          };
-          await addDoc(casesRef, nc);
-          added++;
-        }
-      }
-      showToast(added > 0 ? `✓ ${added} caso(s) importado(s) do Calendar` : 'Calendário já sincronizado');
+    if (data.error) {
+      showToast('Erro: ' + data.error);
+      return;
     }
+    if (!data.items || data.items.length === 0) {
+      showToast('Nenhum evento encontrado na agenda');
+      return;
+    }
+    let added = 0;
+    for (const event of data.items) {
+      const dateStr = event.start?.date || event.start?.dateTime?.split('T')[0];
+      if (!dateStr) continue;
+      const title = event.summary || '';
+      if (!title) continue;
+
+      // Only import Wednesday (3) and Thursday (4)
+      const [y,m,d] = dateStr.split('-').map(Number);
+      const dow = new Date(y, m-1, d).getDay();
+      if (dow !== 3 && dow !== 4) continue;
+      const desc = event.description || '';
+      const exists = state.cases.some(c => c.calEventId === event.id);
+      if (!exists) {
+        const nc = {
+          nome: title.split(' — ')[0] || title,
+          lado: title.includes('Direito')||title.includes(' D)')||title.includes(' D ') ? 'D' : title.includes('Esquerdo')||title.includes(' E)')||title.includes(' E ') ? 'E' : '',
+          data: dateStr,
+          diag: desc.match(/Diagnóstico: (.+)/)?.[1] || '',
+          proc: desc.match(/Procedimento: (.+)/)?.[1] || title,
+          rh: desc.match(/RH: (.+)/)?.[1] || '',
+          tel1: desc.match(/Tel: (.+)/)?.[1] || '',
+          ocupacao: desc.match(/Ocupação: (.+)/)?.[1] || '',
+          resumo: '', ef: '', imagem: '',
+          examImages: [], reportImages: [], chartImage: null,
+          calEventId: event.id,
+          idade: 0, tel2: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        await addDoc(casesRef, nc);
+        added++;
+      }
+    }
+    showToast(added > 0 ? `✓ ${added} caso(s) importado(s) do Calendar` : 'Todos os eventos já estavam no MK SurgiCal');
   } catch(err) {
-    showToast('Erro ao sincronizar');
+    showToast('Erro ao importar: ' + err.message);
     console.error(err);
   }
 }
 
-// Handle OAuth callback tokens from URL
-function handleCalendarCallback() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('calendar_access_token')) {
-    calTokens = {
-      access_token: params.get('calendar_access_token'),
-      refresh_token: params.get('calendar_refresh_token'),
-      expires_in: params.get('calendar_expires_in')
-    };
-    localStorage.setItem('cal_tokens', JSON.stringify(calTokens));
-    window.history.replaceState({}, '', '/');
-    showToast('✓ Google Calendar conectado!');
-    updateCalBtn();
-  }
-  if (params.get('calendar_error')) {
-    showToast('Erro ao conectar Calendar: ' + params.get('calendar_error'));
-    window.history.replaceState({}, '', '/');
-  }
+function updateCalBtn() {
+  const btn = document.getElementById('cal-btn');
+  if (btn) btn.title = 'Importar do Google Calendar';
 }
 
 // ── INIT ───────────────────────────────────────────────
   renderCalendar();
   selectDay(todayStr, false);
   document.getElementById('sheet-date').value=todayStr;
-  handleCalendarCallback();
   updateCalBtn();
 } // end initApp
 
