@@ -73,6 +73,15 @@ export default async function handler(req, res) {
       return res.status(eventRes.ok?200:400).json(await eventRes.json());
     }
  
+    if (action === 'delete') {
+      const { eventId } = req.body;
+      const delRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(targetCalendar)}/events/${eventId}`,
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      return res.status(delRes.ok ? 200 : 400).json({ deleted: delRes.ok });
+    }
+ 
     if (action === 'fetch') {
       let allItems = [];
       let pageToken = null;
