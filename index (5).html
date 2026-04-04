@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="MK SurgiCal" />
+<title>MK SurgiCal 🔪📅</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; }
+#app { max-width: 430px; margin: 0 auto; min-height: 100vh; background: #f2f2f7; position: relative; }
+
+/* TOPBAR */
+.topbar { background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.topbar-surgi { font-size: 20px; font-weight: 600; color: #111; letter-spacing: -0.5px; }
+.topbar-cal { font-size: 20px; font-weight: 600; color: #185FA5; letter-spacing: -0.5px; }
+.topbar-sub { font-size: 11px; color: #888; margin-top: 1px; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 0.5px solid #ddd; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+/* SCREENS */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* CALENDAR */
+.month-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #fff; border-bottom: 0.5px solid #e0e0e0; }
+.month-label { font-size: 15px; font-weight: 600; color: #111; }
+.nav-btn { width: 30px; height: 30px; border-radius: 8px; border: 0.5px solid #ddd; background: transparent; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: #111; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #fff; border-bottom: 0.5px solid #e0e0e0; }
+.cal-dow { text-align: center; font-size: 10px; font-weight: 600; color: #888; padding: 6px 0 5px; }
+.cal-day { border: 0.5px solid #f0f0f0; min-height: 56px; padding: 4px; cursor: pointer; background: #fff; }
+.cal-day:active { background: #f5f5f5; }
+.cal-day.other-month { opacity: 0.3; }
+.cal-day.selected { background: #EBF3FC; }
+.day-num { font-size: 12px; font-weight: 500; color: #111; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.cal-day.today .day-num { background: #185FA5; color: #fff; }
+.day-pip { width: 5px; height: 5px; border-radius: 50%; background: #185FA5; margin: 2px auto 0; }
+.case-count { font-size: 9px; color: #185FA5; text-align: center; margin-top: 1px; }
+.day-cases-header { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+.day-cases-title { font-size: 14px; font-weight: 600; color: #111; }
+.add-btn { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: #185FA5; border: 0.5px solid #185FA5; background: transparent; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
+.cases-list { padding: 0 16px 100px; display: flex; flex-direction: column; gap: 10px; }
+
+/* CASE CARD */
+.case-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 14px; cursor: pointer; }
+.case-card:active { opacity: 0.85; }
+.case-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.case-name { font-size: 14px; font-weight: 600; color: #111; }
+.case-meta-line { font-size: 12px; color: #666; margin-top: 1px; }
+.side-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 8px; flex-shrink: 0; }
+.side-D { background: #EBF3FC; color: #0C447C; }
+.side-E { background: #EEEDFE; color: #3C3489; }
+.side-B { background: #EAF3DE; color: #3B6D11; }
+.case-proc { font-size: 12px; color: #555; margin-top: 6px; line-height: 1.4; }
+.case-diag { font-size: 11px; color: #888; background: #f5f5f5; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-top: 6px; }
+.img-thumbs { display: flex; gap: 6px; margin-top: 8px; }
+.img-thumb { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 0.5px solid #e0e0e0; }
+.empty-state { text-align: center; padding: 40px 24px; color: #888; font-size: 14px; }
+.empty-icon { font-size: 28px; margin-bottom: 10px; }
+
+/* FORM */
+.screen-form { padding: 0 16px 130px; }
+.form-section { margin-top: 14px; }
+.form-section-title { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 6px; padding-left: 2px; }
+.form-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; overflow: hidden; }
+.form-row { display: flex; align-items: center; padding: 0 14px; border-bottom: 0.5px solid #f0f0f0; min-height: 46px; gap: 10px; }
+.form-row:last-child { border-bottom: none; }
+.form-row.textarea-row { align-items: flex-start; }
+.form-label { font-size: 13px; color: #666; min-width: 82px; flex-shrink: 0; }
+.form-input { flex: 1; font-size: 14px; color: #111; background: transparent; border: none; outline: none; padding: 10px 0; font-family: inherit; }
+.form-input::placeholder { color: #bbb; }
+.form-textarea { flex: 1; font-size: 13px; color: #111; background: transparent; border: none; outline: none; padding: 12px 0; font-family: inherit; resize: none; min-height: 68px; line-height: 1.5; width: 100%; }
+.form-textarea::placeholder { color: #bbb; }
+.form-select { flex: 1; font-size: 14px; color: #111; background: transparent; border: none; outline: none; padding: 10px 0; font-family: inherit; appearance: none; cursor: pointer; }
+
+/* IMAGE SECTIONS */
+.img-section { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; overflow: hidden; }
+.img-section-header { padding: 10px 14px; border-bottom: 0.5px solid #f0f0f0; }
+.img-section-label { font-size: 13px; font-weight: 600; color: #111; }
+.img-section-sub { font-size: 11px; color: #888; margin-top: 1px; }
+.img-section-body { padding: 12px 14px; }
+.upload-btn { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #185FA5; border: 0.5px dashed #378ADD; background: #EBF3FC; padding: 9px 14px; border-radius: 10px; cursor: pointer; width: 100%; justify-content: center; }
+.upload-btn.green { color: #3B6D11; border-color: #639922; background: #EAF3DE; }
+.upload-btn.purple { color: #3C3489; border-color: #7F77DD; background: #EEEDFE; }
+.upload-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.preview-item { position: relative; }
+.preview-img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 0.5px solid #e0e0e0; display: block; }
+.preview-remove { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: #E24B4A; border: none; cursor: pointer; font-size: 11px; color: white; display: flex; align-items: center; justify-content: center; }
+.ai-extracting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; padding: 8px 0; }
+
+/* SAVE BAR */
+.save-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 0.5px solid #e0e0e0; padding: 12px 16px; display: flex; gap: 10px; z-index: 200; }
+.btn-primary { flex: 1; background: #185FA5; color: white; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn-secondary { background: transparent; color: #666; border: 0.5px solid #ddd; border-radius: 12px; padding: 13px 18px; font-size: 15px; cursor: pointer; font-family: inherit; }
+.btn-danger { background: transparent; color: #A32D2D; border: 0.5px solid #A32D2D; border-radius: 12px; padding: 13px 18px; font-size: 15px; cursor: pointer; font-family: inherit; }
+
+/* OR SHEET */
+.or-sheet-wrap { padding: 0 16px 110px; }
+.or-date-row { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 12px 14px; margin-top: 14px; display: flex; align-items: center; gap: 10px; }
+.or-date-input { flex: 1; font-size: 14px; color: #111; background: transparent; border: none; outline: none; font-family: inherit; }
+.generate-btn { background: #185FA5; color: white; border: none; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.sheet-preview { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; margin-top: 12px; overflow: hidden; }
+.sheet-header { background: #042C53; color: white; padding: 16px; display: flex; align-items: flex-start; justify-content: space-between; }
+.sheet-title { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+.sheet-subtitle { font-size: 12px; opacity: 0.7; }
+.sheet-case { border-bottom: 0.5px solid #f0f0f0; padding: 14px 16px; }
+.sheet-case:last-child { border-bottom: none; }
+.sheet-case-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.sheet-num { width: 26px; height: 26px; border-radius: 50%; background: #EBF3FC; color: #185FA5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.sheet-patient-name { font-size: 14px; font-weight: 600; color: #111; }
+.sheet-patient-sub { font-size: 12px; color: #666; margin-top: 1px; }
+.sheet-block { margin-top: 7px; }
+.sheet-block-label { font-size: 9px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px; }
+.sheet-block-text { font-size: 12px; color: #111; line-height: 1.5; }
+.sheet-proc-text { font-size: 13px; color: #185FA5; font-weight: 600; line-height: 1.5; }
+.sheet-contacts { display: flex; gap: 16px; margin-top: 6px; flex-wrap: wrap; }
+.sheet-contact { font-size: 12px; color: #666; }
+.sheet-contact span { color: #111; }
+.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.img-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 0.5px solid #e0e0e0; display: block; }
+.img-placeholder { background: #f5f5f5; border: 0.5px dashed #ccc; border-radius: 6px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; text-align: center; }
+.export-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 0.5px solid #e0e0e0; padding: 12px 16px; z-index: 200; }
+.export-pdf-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #042C53; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+/* CASE LOG */
+.caselog-wrap { padding: 0 16px 100px; }
+.caselog-info { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 16px; margin-top: 14px; }
+.caselog-count { font-size: 28px; font-weight: 600; color: #111; }
+.caselog-label { font-size: 13px; color: #888; margin-top: 2px; margin-bottom: 12px; }
+.caselog-table-wrap { overflow-x: auto; }
+.caselog-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.caselog-table th { text-align: left; font-weight: 600; color: #888; padding: 6px 8px; border-bottom: 0.5px solid #f0f0f0; white-space: nowrap; font-size: 11px; }
+.caselog-table td { padding: 8px; border-bottom: 0.5px solid #f0f0f0; color: #111; vertical-align: top; }
+.caselog-table tr:last-child td { border-bottom: none; }
+.export-xl-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #185FA5; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 14px; }
+
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 0.5px solid #e0e0e0; display: flex; z-index: 150; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0 12px; cursor: pointer; gap: 3px; border: none; background: transparent; }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 10px; color: #888; }
+.nav-item.active .nav-label { color: #185FA5; font-weight: 600; }
+
+/* BACK BTN */
+.back-btn { display: flex; align-items: center; gap: 5px; font-size: 14px; color: #185FA5; background: none; border: none; cursor: pointer; padding: 12px 16px 4px; font-family: inherit; }
+
+/* DETAIL */
+.detail-wrap { padding: 0 16px 100px; }
+.detail-name-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 10px; }
+.detail-name { font-size: 17px; font-weight: 600; color: #111; }
+.detail-sub { font-size: 13px; color: #666; margin-top: 2px; }
+.detail-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
+.detail-row { padding: 11px 14px; border-bottom: 0.5px solid #f0f0f0; display: flex; gap: 10px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { font-size: 12px; color: #888; min-width: 90px; flex-shrink: 0; padding-top: 1px; }
+.detail-value { font-size: 13px; color: #111; line-height: 1.5; flex: 1; }
+.detail-img-grid { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px; }
+.detail-section-title { padding: 10px 14px 6px; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 0.5px solid #f0f0f0; }
+.detail-action-row { display: flex; gap: 10px; padding: 8px 0 4px; }
+
+/* LOADING */
+.loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 12px; font-size: 14px; color: #666; }
+.spinner { width: 32px; height: 32px; border: 2.5px solid #e0e0e0; border-top-color: #185FA5; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SYNC INDICATOR */
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; display: inline-block; margin-left: 6px; }
+.sync-dot.synced { background: #639922; }
+.sync-dot.syncing { background: #EF9F27; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* LOGIN */
+.login-screen { position: fixed; inset: 0; background: #f2f2f7; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 32px; }
+.login-logo { display: flex; align-items: baseline; gap: 0; margin-bottom: 8px; }
+.login-surgi { font-size: 36px; font-weight: 600; color: #111; letter-spacing: -1px; }
+.login-cal { font-size: 36px; font-weight: 600; color: #185FA5; letter-spacing: -1px; }
+.login-emoji { font-size: 24px; margin-left: 6px; }
+.login-sub { font-size: 13px; color: #888; margin-bottom: 48px; }
+.login-card { background: #fff; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 340px; border: 0.5px solid #e0e0e0; }
+.login-title { font-size: 17px; font-weight: 600; color: #111; margin-bottom: 4px; }
+.login-desc { font-size: 13px; color: #888; margin-bottom: 24px; line-height: 1.5; }
+.google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; background: #fff; color: #111; border: 0.5px solid #ddd; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.google-btn:hover { background: #f5f5f5; }
+.google-btn:active { background: #ebebeb; }
+.google-icon { width: 20px; height: 20px; }
+.login-blocked { background: #fff0f0; border: 0.5px solid #ffcdd2; border-radius: 12px; padding: 14px; margin-top: 14px; font-size: 13px; color: #A32D2D; text-align: center; line-height: 1.5; display: none; }
+.logout-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; font-family: inherit; padding: 4px 0; }
+</style>
+</head>
+<body>
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen" style="display:none;">
+  <div class="login-logo">
+    <span class="login-surgi">MK Surgi</span><span class="login-cal">Cal</span><span class="login-emoji">🔪📅</span>
+  </div>
+  <div class="login-sub">EPM-UNIFESP · Barueri</div>
+  <div class="login-card">
+    <div class="login-title">Acesso restrito</div>
+    <div class="login-desc">Entre com sua conta Google autorizada para acessar a agenda cirúrgica.</div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    <div class="login-blocked" id="login-blocked">
+      Acesso não autorizado.<br/>Entre em contato com o administrador.
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <div>
+      <div style="display:flex;align-items:baseline;">
+        <span class="topbar-surgi">MK Surgi</span><span class="topbar-cal">Cal</span>
+        <span style="font-size:15px;margin-left:5px;">🔪📅</span>
+        <span class="sync-dot" id="sync-dot" title="Status de sincronização"></span>
+      </div>
+      <div class="topbar-sub">EPM-UNIFESP · Barueri</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="icon-btn" onclick="openNewCase()">+</button>
+      <button class="logout-btn" onclick="signOut()" title="Sair">⎋</button>
+    </div>
+  </div>
+
+  <div id="screen-calendar" class="screen active">
+    <div class="month-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+      <span class="month-label" id="month-label"></span>
+      <button class="nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div id="day-cases-view"></div>
+  </div>
+
+  <div id="screen-form" class="screen">
+    <button class="back-btn" onclick="goBack()">← Voltar</button>
+    <div class="screen-form">
+      <div class="form-section">
+        <div class="form-section-title">Prontuário — Leitura por IA</div>
+        <div class="img-section">
+          <div class="img-section-header">
+            <div class="img-section-label">📋 Foto do Prontuário</div>
+            <div class="img-section-sub">Fotografe o papel — a IA preenche os campos automaticamente</div>
+          </div>
+          <div class="img-section-body">
+            <input type="file" id="chart-input" accept="image/*" style="display:none;" onchange="handleChartPhoto(event)" />
+            <button class="upload-btn purple" onclick="document.getElementById('chart-input').click()">
+              <span style="font-size:15px;">📷</span> Fotografar prontuário
+            </button>
+            <div id="chart-preview"></div>
+            <div id="ai-status"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Paciente</div>
+        <div class="form-card">
+          <div class="form-row"><span class="form-label">Nome</span><input class="form-input" id="f-nome" placeholder="Nome completo" /></div>
+          <div class="form-row"><span class="form-label">Idade</span><input class="form-input" id="f-idade" placeholder="34" type="number" style="max-width:60px;" /><span style="font-size:13px;color:#888;">anos</span></div>
+          <div class="form-row"><span class="form-label">Ocupação</span><input class="form-input" id="f-ocupacao" placeholder="ex: Atleta, Professor, Aposentado" /></div>
+          <div class="form-row"><span class="form-label">RH</span><input class="form-input" id="f-rh" placeholder="Nº prontuário" /></div>
+          <div class="form-row"><span class="form-label">Tel 1</span><input class="form-input" id="f-tel1" placeholder="(11) 9xxxx-xxxx" type="tel" /></div>
+          <div class="form-row"><span class="form-label">Tel 2</span><input class="form-input" id="f-tel2" placeholder="Contato alternativo" type="tel" /></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Cirurgia</div>
+        <div class="form-card">
+          <div class="form-row"><span class="form-label">Data</span><input class="form-input" id="f-data" type="date" /></div>
+          <div class="form-row">
+            <span class="form-label">Lado</span>
+            <select class="form-select" id="f-lado">
+              <option value="">—</option>
+              <option value="D">Direito</option>
+              <option value="E">Esquerdo</option>
+              <option value="B">Bilateral</option>
+            </select>
+          </div>
+          <div class="form-row"><span class="form-label">Diagnóstico</span><input class="form-input" id="f-diag" placeholder="ex: Lesão LCA + menisco ML" /></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Resumo Clínico</div>
+        <div class="form-card"><div class="form-row textarea-row"><textarea class="form-textarea" id="f-resumo" placeholder="História, queixa principal, contexto..."></textarea></div></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Exame Físico</div>
+        <div class="form-card"><div class="form-row textarea-row"><textarea class="form-textarea" id="f-ef" placeholder="ex: ADM -5/135°. Lachman +. Pivot shift +."></textarea></div></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Imagem</div>
+        <div class="form-card"><div class="form-row textarea-row"><textarea class="form-textarea" id="f-imagem" placeholder="ex: RNM – lesão completa LCA, menisco ML lesão vertical..."></textarea></div></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Procedimento Planejado</div>
+        <div class="form-card"><div class="form-row textarea-row"><textarea class="form-textarea" id="f-proc" placeholder="ex: RLCA BTB + Lemaire + reparo menisco ML"></textarea></div></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Exames de Imagem (RX / RNM)</div>
+        <div class="img-section">
+          <div class="img-section-body">
+            <input type="file" id="exam-input" accept="image/*" multiple style="display:none;" onchange="handleImages(event,'exam')" />
+            <button class="upload-btn" onclick="document.getElementById('exam-input').click()"><span style="font-size:15px;">🩻</span> Adicionar RX / RNM</button>
+            <div class="upload-preview" id="exam-preview"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Relatório Cirúrgico (pós-operatório)</div>
+        <div class="img-section">
+          <div class="img-section-body">
+            <input type="file" id="report-input" accept="image/*" multiple style="display:none;" onchange="handleImages(event,'report')" />
+            <button class="upload-btn green" onclick="document.getElementById('report-input').click()"><span style="font-size:15px;">📄</span> Adicionar relatório cirúrgico</button>
+            <div class="upload-preview" id="report-preview"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <button class="btn-secondary" onclick="goBack()">Cancelar</button>
+      <button class="btn-primary" onclick="saveCase()">Salvar caso</button>
+    </div>
+  </div>
+
+  <div id="screen-detail" class="screen">
+    <button class="back-btn" onclick="goBack()">← Voltar</button>
+    <div class="detail-wrap" id="detail-content"></div>
+  </div>
+
+  <div id="screen-sheet" class="screen">
+    <div class="or-sheet-wrap">
+      <div class="or-date-row">
+        <span style="font-size:13px;color:#888;white-space:nowrap;">Data:</span>
+        <input class="or-date-input" type="date" id="sheet-date" />
+        <button class="generate-btn" onclick="generateSheet()">Gerar folha</button>
+      </div>
+      <div id="sheet-output"></div>
+    </div>
+    <div class="export-bar" id="export-bar">
+      <button class="btn-secondary" onclick="switchScreen('calendar')" style="padding:13px 16px;">← Voltar</button>
+      <button class="export-pdf-btn" id="print-btn" onclick="exportPDF()" style="display:none;flex:1;">🖨 Imprimir</button>
+    </div>
+  </div>
+
+  <div id="screen-caselog" class="screen">
+    <div class="caselog-wrap">
+      <div class="caselog-info">
+        <div class="caselog-count" id="log-count">0</div>
+        <div class="caselog-label">casos registrados</div>
+        <div class="caselog-table-wrap">
+          <table class="caselog-table">
+            <thead><tr><th>Paciente</th><th>Idade</th><th>RH</th><th>Data</th><th>Diagnóstico</th><th>Procedimento</th></tr></thead>
+            <tbody id="log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <button class="export-xl-btn" onclick="exportExcel()">⬇ Exportar Excel</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item active" id="nav-calendar" onclick="switchScreen('calendar')"><span class="nav-icon">📅</span><span class="nav-label">Agenda</span></button>
+    <button class="nav-item" id="nav-sheet" onclick="switchScreen('sheet')"><span class="nav-icon">📋</span><span class="nav-label">Folha OR</span></button>
+    <button class="nav-item" id="nav-caselog" onclick="switchScreen('caselog')"><span class="nav-icon">📊</span><span class="nav-label">Case Log</span></button>
+  </nav>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div>Carregando SurgiCal...</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+
+const ALLOWED_EMAILS = ['enzomameri@gmail.com'];
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCI-jCnl8HQ5IicdWLGwJVcyigqxP6_jas",
+  authDomain: "surgical-61650.firebaseapp.com",
+  projectId: "surgical-61650",
+  storageBucket: "surgical-61650.firebasestorage.app",
+  messagingSenderId: "877156144811",
+  appId: "1:877156144811:web:bf1b504a0b544f928cc9ee"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
+const storage = getStorage(firebaseApp);
+const provider = new GoogleAuthProvider();
+
+// ── AUTH ───────────────────────────────────────────────
+window.signInWithGoogle = async function() {
+  document.getElementById('login-blocked').style.display = 'none';
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const email = result.user.email;
+    if (!ALLOWED_EMAILS.includes(email)) {
+      await firebaseSignOut(auth);
+      document.getElementById('login-blocked').style.display = 'block';
+    }
+  } catch(e) {
+    console.error('Login error:', e);
+  }
+}
+
+window.signOut = async function() {
+  if (confirm('Sair do SurgiCal?')) {
+    await firebaseSignOut(auth);
+  }
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (user && ALLOWED_EMAILS.includes(user.email)) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('loading-overlay').style.display = 'flex';
+    initApp();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loading-overlay').style.display = 'none';
+  }
+});
+
+let appInitialized = false;
+function initApp() {
+  if (appInitialized) return;
+  appInitialized = true;
+
+// ── UTILS ──────────────────────────────────────────────
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DAYS_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function localDateStr(y,m,d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function parseLocalDate(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  return {y, m:m-1, d};
+}
+function formatDate(str) {
+  if (!str) return '—';
+  const {y,m,d} = parseLocalDate(str);
+  return `${String(d).padStart(2,'0')}/${String(m+1).padStart(2,'0')}/${y}`;
+}
+function sideLabel(s) {
+  return s==='D'?'Direito':s==='E'?'Esquerdo':s==='B'?'Bilateral':'';
+}
+function setSyncDot(status) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot ' + status;
+}
+
+const todayStr = localToday();
+const todayParts = parseLocalDate(todayStr);
+
+// ── STATE ──────────────────────────────────────────────
+let state = {
+  currentYear: todayParts.y,
+  currentMonth: todayParts.m,
+  selectedDate: todayStr,
+  editingId: null,
+  tempExamImages: [],
+  tempReportImages: [],
+  tempChartImage: null,
+  cases: []
+};
+
+// ── FIRESTORE REALTIME SYNC ────────────────────────────
+const casesRef = collection(db, 'cases');
+const q = query(casesRef, orderBy('data', 'asc'));
+
+onSnapshot(q, (snapshot) => {
+  state.cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  setSyncDot('synced');
+  document.getElementById('loading-overlay').style.display = 'none';
+  renderCalendar();
+  if (state.selectedDate) selectDay(state.selectedDate, false);
+}, (error) => {
+  console.error('Firestore error:', error);
+  setSyncDot('syncing');
+  document.getElementById('loading-overlay').style.display = 'none';
+});
+
+// ── SCREENS ────────────────────────────────────────────
+window.switchScreen = function(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const ni = document.getElementById('nav-'+name);
+  if (ni) ni.classList.add('active');
+  document.getElementById('bottom-nav').style.display = (name==='form'||name==='detail') ? 'none' : 'flex';
+  if (name==='caselog') renderCaseLog();
+}
+
+// ── CALENDAR ───────────────────────────────────────────
+window.changeMonth = function(dir) {
+  state.currentMonth += dir;
+  if (state.currentMonth>11){state.currentMonth=0;state.currentYear++;}
+  if (state.currentMonth<0){state.currentMonth=11;state.currentYear--;}
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const y=state.currentYear, m=state.currentMonth;
+  document.getElementById('month-label').textContent = MONTHS[m]+' '+y;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = DAYS_SHORT.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const firstDow = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const daysInPrev = new Date(y,m,0).getDate();
+  let cells=[];
+  for(let i=firstDow-1;i>=0;i--) cells.push({d:daysInPrev-i,other:true,date:localDateStr(y,m-1,daysInPrev-i)});
+  for(let d=1;d<=daysInMonth;d++) cells.push({d,other:false,date:localDateStr(y,m,d)});
+  let next=1;
+  while(cells.length%7!==0){cells.push({d:next,other:true,date:localDateStr(y,m+1,next)});next++;}
+  cells.forEach(cell=>{
+    const casesOnDay=state.cases.filter(c=>c.data===cell.date);
+    const div=document.createElement('div');
+    div.className='cal-day'+(cell.other?' other-month':'')+(cell.date===todayStr?' today':'')+(cell.date===state.selectedDate&&cell.date!==todayStr?' selected':'');
+    div.onclick=()=>selectDay(cell.date);
+    div.innerHTML=`<div class="day-num">${cell.d}</div>`;
+    if(casesOnDay.length>0){
+      const pip=document.createElement('div');pip.className='day-pip';div.appendChild(pip);
+      const cnt=document.createElement('div');cnt.className='case-count';cnt.textContent=casesOnDay.length+(casesOnDay.length===1?' caso':' casos');div.appendChild(cnt);
+    }
+    grid.appendChild(div);
+  });
+}
+
+function selectDay(dateStr, rerender) {
+  state.selectedDate=dateStr;
+  if(rerender!==false) renderCalendar();
+  const cases=state.cases.filter(c=>c.data===dateStr);
+  let html=`<div class="day-cases-header"><div class="day-cases-title">${formatDate(dateStr)}</div><button class="add-btn" onclick="openNewCase('${dateStr}')">+ Novo caso</button></div>`;
+  if(cases.length===0){
+    html+=`<div class="empty-state"><div class="empty-icon">🔪</div><div>Sem cirurgias agendadas</div><div style="font-size:12px;margin-top:4px;color:#bbb;">Toque em + para adicionar</div></div>`;
+  } else {
+    html+=`<div class="cases-list">`+cases.map(caseCardHTML).join('')+`</div>`;
+  }
+  document.getElementById('day-cases-view').innerHTML=html;
+}
+
+function caseCardHTML(c) {
+  const allImgs=[...(c.examImages||[])];
+  const thumbs=allImgs.length>0?`<div class="img-thumbs">${allImgs.slice(0,3).map(img=>`<img class="img-thumb" src="${img}" />`).join('')}</div>`:'';
+  return `<div class="case-card" onclick="openDetail('${c.id}')">
+    <div class="case-header">
+      <div><div class="case-name">${c.nome}</div><div class="case-meta-line">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>
+      ${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}
+    </div>
+    ${c.proc?`<div class="case-proc">${c.proc}</div>`:''}
+    ${c.diag?`<span class="case-diag">${c.diag}</span>`:''}
+    ${thumbs}
+  </div>`;
+}
+
+// ── FORM ───────────────────────────────────────────────
+window.openNewCase = function(dateStr) {
+  state.editingId=null;state.tempExamImages=[];state.tempReportImages=[];state.tempChartImage=null;
+  ['nome','idade','ocupacao','rh','tel1','tel2','diag','resumo','ef','imagem','proc'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  document.getElementById('f-lado').value='';
+  document.getElementById('f-data').value=dateStr||state.selectedDate||todayStr;
+  document.getElementById('exam-preview').innerHTML='';
+  document.getElementById('report-preview').innerHTML='';
+  document.getElementById('chart-preview').innerHTML='';
+  document.getElementById('ai-status').innerHTML='';
+  switchScreen('form');
+}
+
+window.openDetail = function(id) {
+  const c=state.cases.find(x=>x.id===id);if(!c)return;
+  let html=`<div class="detail-name-row">
+    <div><div class="detail-name">${c.nome}</div><div class="detail-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>
+    ${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}
+  </div>
+  <div class="detail-card">
+    <div class="detail-row"><span class="detail-label">Data</span><span class="detail-value">${formatDate(c.data)}</span></div>
+    <div class="detail-row"><span class="detail-label">Diagnóstico</span><span class="detail-value">${c.diag||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Tel 1</span><span class="detail-value">${c.tel1||'—'}</span></div>
+    ${c.tel2?`<div class="detail-row"><span class="detail-label">Tel 2</span><span class="detail-value">${c.tel2}</span></div>`:''}
+  </div>
+  <div class="detail-card">
+    ${c.resumo?`<div class="detail-row"><span class="detail-label">Resumo clínico</span><span class="detail-value">${c.resumo}</span></div>`:''}
+    ${c.ef?`<div class="detail-row"><span class="detail-label">Exame físico</span><span class="detail-value">${c.ef}</span></div>`:''}
+    ${c.imagem?`<div class="detail-row"><span class="detail-label">Imagem</span><span class="detail-value">${c.imagem}</span></div>`:''}
+    ${c.proc?`<div class="detail-row"><span class="detail-label">Procedimento</span><span class="detail-value" style="color:#185FA5;font-weight:600;">${c.proc}</span></div>`:''}
+  </div>`;
+  if(c.examImages&&c.examImages.length>0){html+=`<div class="detail-card"><div class="detail-section-title">🩻 Exames de Imagem</div><div class="detail-img-grid">${c.examImages.map(img=>`<img src="${img}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" />`).join('')}</div></div>`;}
+  if(c.reportImages&&c.reportImages.length>0){html+=`<div class="detail-card"><div class="detail-section-title">📄 Relatório Cirúrgico</div><div class="detail-img-grid">${c.reportImages.map(img=>`<img src="${img}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" />`).join('')}</div></div>`;}
+  if(c.chartImage){html+=`<div class="detail-card"><div class="detail-section-title">📋 Prontuário</div><div class="detail-img-grid"><img src="${c.chartImage}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" /></div></div>`;}
+  html+=`<div class="detail-action-row"><button class="btn-danger" onclick="deleteCase('${c.id}')">Excluir</button><button class="btn-primary" style="flex:1;" onclick="editCase('${c.id}')">Editar</button></div>`;
+  document.getElementById('detail-content').innerHTML=html;
+  switchScreen('detail');
+}
+
+window.editCase = function(id) {
+  const c=state.cases.find(x=>x.id===id);if(!c)return;
+  state.editingId=id;
+  state.tempExamImages=[...(c.examImages||[])];
+  state.tempReportImages=[...(c.reportImages||[])];
+  state.tempChartImage=c.chartImage||null;
+  ['nome','idade','ocupacao','rh','tel1','tel2','lado','data','diag','resumo','ef','imagem','proc'].forEach(f=>{
+    const el=document.getElementById('f-'+f);if(el)el.value=c[f]||'';
+  });
+  renderImagePreview('exam',state.tempExamImages,'exam-preview');
+  renderImagePreview('report',state.tempReportImages,'report-preview');
+  if(state.tempChartImage){document.getElementById('chart-preview').innerHTML=`<div style="margin-top:8px;"><img src="${state.tempChartImage}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" /></div>`;}
+  document.getElementById('ai-status').innerHTML='';
+  switchScreen('form');
+}
+
+window.deleteCase = async function(id) {
+  if(confirm('Excluir este caso?')){
+    setSyncDot('syncing');
+    await deleteDoc(doc(db,'cases',id));
+    goBack();
+  }
+}
+
+// ── STORAGE HELPERS ────────────────────────────────────
+async function uploadImages(images, folder, caseId) {
+  const urls = [];
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (img.startsWith('http')) { urls.push(img); continue; } // already uploaded
+    const imgRef = ref(storage, `cases/${caseId}/${folder}/${Date.now()}_${i}`);
+    await uploadString(imgRef, img, 'data_url');
+    const url = await getDownloadURL(imgRef);
+    urls.push(url);
+  }
+  return urls;
+}
+
+window.saveCase = async function() {
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){alert('Nome do paciente é obrigatório.');return;}
+  
+  setSyncDot('syncing');
+  document.querySelector('.btn-primary').textContent = 'Salvando...';
+  document.querySelector('.btn-primary').disabled = true;
+
+  try {
+    const caseId = state.editingId || `case_${Date.now()}`;
+    
+    const examUrls = await uploadImages(state.tempExamImages, 'exam', caseId);
+    const reportUrls = await uploadImages(state.tempReportImages, 'report', caseId);
+    let chartUrl = state.tempChartImage;
+    if (chartUrl && !chartUrl.startsWith('http')) {
+      const chartRef = ref(storage, `cases/${caseId}/chart/chart`);
+      await uploadString(chartRef, chartUrl, 'data_url');
+      chartUrl = await getDownloadURL(chartRef);
+    }
+
+    const nc={
+      nome, idade:parseInt(document.getElementById('f-idade').value)||0,
+      ocupacao:document.getElementById('f-ocupacao').value.trim(),
+      rh:document.getElementById('f-rh').value.trim(),
+      tel1:document.getElementById('f-tel1').value.trim(),
+      tel2:document.getElementById('f-tel2').value.trim(),
+      lado:document.getElementById('f-lado').value,
+      data:document.getElementById('f-data').value,
+      diag:document.getElementById('f-diag').value.trim(),
+      resumo:document.getElementById('f-resumo').value.trim(),
+      ef:document.getElementById('f-ef').value.trim(),
+      imagem:document.getElementById('f-imagem').value.trim(),
+      proc:document.getElementById('f-proc').value.trim(),
+      examImages: examUrls,
+      reportImages: reportUrls,
+      chartImage: chartUrl || null,
+      updatedAt: new Date().toISOString()
+    };
+
+    if(state.editingId){
+      await updateDoc(doc(db,'cases',state.editingId), nc);
+    } else {
+      nc.createdAt = new Date().toISOString();
+      await addDoc(casesRef, nc);
+    }
+    state.selectedDate=nc.data;
+    goBack();
+  } catch(err) {
+    console.error('Save error:', err);
+    alert('Erro ao salvar: ' + err.message);
+    setSyncDot('syncing');
+  } finally {
+    document.querySelector('.btn-primary').textContent = 'Salvar caso';
+    document.querySelector('.btn-primary').disabled = false;
+  }
+}
+
+window.handleChartPhoto = async function(e) {
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const dataUrl=ev.target.result;
+    state.tempChartImage=dataUrl;
+    document.getElementById('chart-preview').innerHTML=`<div style="margin-top:8px;"><img src="${dataUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" /></div>`;
+    document.getElementById('ai-status').innerHTML=`<div class="ai-extracting"><span style="font-size:15px;">✨</span> Lendo prontuário com IA...</div>`;
+    try {
+      const base64=dataUrl.split(',')[1];
+      const mediaType=file.type||'image/jpeg';
+      const resp=await fetch('/api/ocr',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:1000,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+            {type:'text',text:`Analise este prontuário do EPM-UNIFESP e extraia os dados em JSON puro (sem markdown, sem backticks).
+
+Mapeamento dos campos:
+- "paciente" ou "nome" → nome
+- "idade" → idade (só o número)
+- "prontuário" ou "pront." → rh
+- "tel. residencial" ou primeiro telefone → tel1
+- "tel. celular" ou segundo telefone → tel2
+- Seção "ORTOPEDIA - ASSISTENCIA ESPECIALIZADA":
+  - diagnóstico principal → diag
+  - história clínica / queixa → resumo
+  - exame físico / EF → ef
+  - exames de imagem / RX / RNM → imagem
+  - conduta / procedimento / cirurgia planejada → proc
+- lado operado (D=direito, E=esquerdo, B=bilateral) → lado
+
+Retorne APENAS este JSON:
+{"nome":"","idade":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","resumo":"","ef":"","imagem":"","proc":""}
+
+Deixe vazio se não encontrar. Para lado use só: D, E, B ou vazio.`}
+          ]}]
+        })
+      });
+      const data=await resp.json();
+      if(data.error){throw new Error(data.error.message);}
+      const text=data.content?.find(b=>b.type==='text')?.text||'';
+      const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+      ['nome','idade','ocupacao','rh','tel1','tel2','diag','resumo','ef','imagem','proc'].forEach(f=>{
+        if(parsed[f]){const el=document.getElementById('f-'+f);if(el&&!el.value)el.value=parsed[f];}
+      });
+      if(parsed.lado){const el=document.getElementById('f-lado');if(el&&!el.value)el.value=parsed.lado;}
+      document.getElementById('ai-status').innerHTML=`<div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#3B6D11;padding:6px 0;"><span>✓</span> Dados extraídos — revise e ajuste se necessário</div>`;
+    } catch(err) {
+      console.error('OCR error:',err);
+      document.getElementById('ai-status').innerHTML=`<div style="font-size:13px;color:#A32D2D;padding:6px 0;">Erro na extração: ${err.message||'Verifique a chave API'}. Preencha manualmente.</div>`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+window.handleImages = function(e,type) {
+  const arr=type==='exam'?state.tempExamImages:state.tempReportImages;
+  const previewId=type==='exam'?'exam-preview':'report-preview';
+  Array.from(e.target.files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{arr.push(ev.target.result);renderImagePreview(type,arr,previewId);};
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderImagePreview(type,arr,previewId) {
+  document.getElementById(previewId).innerHTML=arr.map((img,i)=>
+    `<div class="preview-item"><img class="preview-img" src="${img}" /><button class="preview-remove" onclick="removeImage('${type}',${i})">×</button></div>`
+  ).join('');
+}
+
+window.removeImage = function(type,i) {
+  if(type==='exam'){state.tempExamImages.splice(i,1);renderImagePreview('exam',state.tempExamImages,'exam-preview');}
+  else{state.tempReportImages.splice(i,1);renderImagePreview('report',state.tempReportImages,'report-preview');}
+}
+
+window.goBack = function() { switchScreen('calendar'); }
+
+// ── OR SHEET ───────────────────────────────────────────
+window.generateSheet = function() {
+  const dateStr=document.getElementById('sheet-date').value;
+  if(!dateStr){alert('Selecione uma data.');return;}
+  const cases=state.cases.filter(c=>c.data===dateStr);
+  if(cases.length===0){
+    document.getElementById('sheet-output').innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div>Sem cirurgias para esta data</div></div>`;
+    document.getElementById('print-btn').style.display='none';
+    return;
+  }
+  let html=`<div class="sheet-preview" id="sheet-print-area"><div class="sheet-header"><div><div class="sheet-title">Folha de Sala — Joelho</div><div class="sheet-subtitle">EPM-UNIFESP · Barueri · ${formatDate(dateStr)}</div></div><div style="font-size:12px;opacity:0.6;">${cases.length} caso${cases.length>1?'s':''}</div></div>`;
+  cases.forEach((c,i)=>{
+    const hasImages=c.examImages&&c.examImages.length>0;
+    const imgHTML=hasImages
+      ?`<div class="img-grid">${c.examImages.map(src=>`<img src="${src}" />`).join('')}</div>`
+      :`<div class="img-grid"><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div></div>`;
+    html+=`<div class="sheet-case">
+      <div class="sheet-case-top"><div class="sheet-num">${i+1}</div><div style="flex:1;"><div class="sheet-patient-name">${c.nome}</div><div class="sheet-patient-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}</div>
+      <div class="sheet-contacts">${c.tel1?`<div class="sheet-contact">Tel 1: <span>${c.tel1}</span></div>`:''} ${c.tel2?`<div class="sheet-contact">Tel 2: <span>${c.tel2}</span></div>`:''}</div>
+      ${c.diag?`<div class="sheet-block"><div class="sheet-block-label">Diagnóstico</div><div class="sheet-block-text">${c.diag}</div></div>`:''}
+      ${c.resumo?`<div class="sheet-block"><div class="sheet-block-label">Resumo clínico</div><div class="sheet-block-text">${c.resumo}</div></div>`:''}
+      ${c.ef?`<div class="sheet-block"><div class="sheet-block-label">Exame físico</div><div class="sheet-block-text">${c.ef}</div></div>`:''}
+      ${c.imagem?`<div class="sheet-block"><div class="sheet-block-label">Imagem</div><div class="sheet-block-text">${c.imagem}</div></div>`:''}
+      ${c.proc?`<div class="sheet-block"><div class="sheet-block-label">Procedimento planejado</div><div class="sheet-proc-text">${c.proc}</div></div>`:''}
+      <div class="sheet-block"><div class="sheet-block-label">Exames de imagem</div>${imgHTML}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('sheet-output').innerHTML=html;
+  document.getElementById('print-btn').style.display='flex';
+}
+
+window.exportPDF = function() {
+  const dateStr=document.getElementById('sheet-date').value;
+  const cases=state.cases.filter(c=>c.data===dateStr);
+  const printStyles=`<style>*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}.page{padding:20px;page-break-after:always;}.page:last-child{page-break-after:auto;}.sheet-header{background:#042C53!important;color:white!important;padding:16px;display:flex;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:6px 6px 0 0;}.sheet-title{font-size:16px;font-weight:bold;margin-bottom:2px;color:white;}.sheet-subtitle{font-size:12px;opacity:0.75;color:white;}.case-body{border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;padding:16px;}.sheet-case-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}.sheet-num{width:26px;height:26px;border-radius:50%;background:#EBF3FC;color:#185FA5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.sheet-patient-name{font-size:15px;font-weight:bold;color:#111;}.sheet-patient-sub{font-size:12px;color:#666;margin-top:1px;}.side-badge{font-size:11px;font-weight:bold;padding:3px 8px;border-radius:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.side-D{background:#EBF3FC;color:#0C447C;}.side-E{background:#EEEDFE;color:#3C3489;}.side-B{background:#EAF3DE;color:#3B6D11;}.sheet-contacts{display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;}.sheet-contact{font-size:12px;color:#666;}.sheet-contact span{color:#111;}.sheet-block{margin-top:8px;}.sheet-block-label{font-size:9px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:2px;}.sheet-block-text{font-size:12px;color:#111;line-height:1.5;}.sheet-proc-text{font-size:13px;color:#185FA5;font-weight:bold;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}.img-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;}.img-placeholder{background:#f5f5f5;border:1px dashed #ccc;border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;}@media print{body{padding:0;}@page{margin:12mm;}}</style>`;
+  const pagesHTML=cases.map((c,i)=>{
+    const hasImages=c.examImages&&c.examImages.length>0;
+    const imgHTML=hasImages?`<div class="img-grid">${c.examImages.map(src=>`<img src="${src}" />`).join('')}</div>`:`<div class="img-grid"><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div></div>`;
+    return `<div class="page"><div class="sheet-header"><div><div class="sheet-title">Folha de Sala — Joelho</div><div class="sheet-subtitle">EPM-UNIFESP · Barueri · ${formatDate(dateStr)}</div></div><div style="font-size:12px;opacity:0.6;">Caso ${i+1} de ${cases.length}</div></div><div class="case-body"><div class="sheet-case-top"><div class="sheet-num">${i+1}</div><div style="flex:1;"><div class="sheet-patient-name">${c.nome}</div><div class="sheet-patient-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}</div><div class="sheet-contacts">${c.tel1?`<div class="sheet-contact">Tel 1: <span>${c.tel1}</span></div>`:''} ${c.tel2?`<div class="sheet-contact">Tel 2: <span>${c.tel2}</span></div>`:''}</div>${c.diag?`<div class="sheet-block"><div class="sheet-block-label">Diagnóstico</div><div class="sheet-block-text">${c.diag}</div></div>`:''}${c.resumo?`<div class="sheet-block"><div class="sheet-block-label">Resumo clínico</div><div class="sheet-block-text">${c.resumo}</div></div>`:''}${c.ef?`<div class="sheet-block"><div class="sheet-block-label">Exame físico</div><div class="sheet-block-text">${c.ef}</div></div>`:''}${c.imagem?`<div class="sheet-block"><div class="sheet-block-label">Imagem</div><div class="sheet-block-text">${c.imagem}</div></div>`:''}${c.proc?`<div class="sheet-block"><div class="sheet-block-label">Procedimento planejado</div><div class="sheet-proc-text">${c.proc}</div></div>`:''}<div class="sheet-block"><div class="sheet-block-label">Exames de imagem</div>${imgHTML}</div></div></div>`;
+  }).join('');
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>SurgiCal — Folha OR ${formatDate(dateStr)}</title>${printStyles}</head><body>${pagesHTML}</body></html>`);
+  win.document.close();
+  win.onload=()=>{win.focus();win.print();};
+}
+
+// ── CASE LOG ───────────────────────────────────────────
+function renderCaseLog() {
+  const sorted=[...state.cases].sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('log-count').textContent=sorted.length;
+  document.getElementById('log-tbody').innerHTML=sorted.map(c=>`<tr><td style="white-space:nowrap;">${c.nome}</td><td>${c.idade}</td><td>${c.rh}</td><td style="white-space:nowrap;">${formatDate(c.data)}</td><td>${c.diag||'—'}</td><td>${c.proc||'—'}</td></tr>`).join('');
+}
+
+window.exportExcel = function() {
+  const sorted=[...state.cases].sort((a,b)=>a.data.localeCompare(b.data));
+  const rows=sorted.map(c=>({'Nome':c.nome,'Idade':c.idade,'RH':c.rh,'Data':formatDate(c.data),'Diagnóstico':c.diag||'','Procedimento':c.proc||''}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Case Log');
+  XLSX.writeFile(wb,`SurgiCal_CaseLog_${localToday()}.xlsx`);
+}
+
+// ── INIT ───────────────────────────────────────────────
+  renderCalendar();
+  selectDay(todayStr, false);
+  document.getElementById('sheet-date').value=todayStr;
+} // end initApp
+
+</script>
+
+<!-- XLSX for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+</body>
+</html>
