@@ -377,6 +377,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
 const ALLOWED_EMAILS = ['enzomameri@gmail.com'];
 
@@ -392,6 +393,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
+const storage = getStorage(firebaseApp);
 const provider = new GoogleAuthProvider();
 
 // ── AUTH ───────────────────────────────────────────────
@@ -628,36 +630,75 @@ window.deleteCase = async function(id) {
   }
 }
 
+// ── STORAGE HELPERS ────────────────────────────────────
+async function uploadImages(images, folder, caseId) {
+  const urls = [];
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (img.startsWith('http')) { urls.push(img); continue; } // already uploaded
+    const imgRef = ref(storage, `cases/${caseId}/${folder}/${Date.now()}_${i}`);
+    await uploadString(imgRef, img, 'data_url');
+    const url = await getDownloadURL(imgRef);
+    urls.push(url);
+  }
+  return urls;
+}
+
 window.saveCase = async function() {
   const nome=document.getElementById('f-nome').value.trim();
   if(!nome){alert('Nome do paciente é obrigatório.');return;}
-  const nc={
-    nome, idade:parseInt(document.getElementById('f-idade').value)||0,
-    ocupacao:document.getElementById('f-ocupacao').value.trim(),
-    rh:document.getElementById('f-rh').value.trim(),
-    tel1:document.getElementById('f-tel1').value.trim(),
-    tel2:document.getElementById('f-tel2').value.trim(),
-    lado:document.getElementById('f-lado').value,
-    data:document.getElementById('f-data').value,
-    diag:document.getElementById('f-diag').value.trim(),
-    resumo:document.getElementById('f-resumo').value.trim(),
-    ef:document.getElementById('f-ef').value.trim(),
-    imagem:document.getElementById('f-imagem').value.trim(),
-    proc:document.getElementById('f-proc').value.trim(),
-    examImages:[...state.tempExamImages],
-    reportImages:[...state.tempReportImages],
-    chartImage:state.tempChartImage||null,
-    updatedAt: new Date().toISOString()
-  };
+  
   setSyncDot('syncing');
-  if(state.editingId){
-    await updateDoc(doc(db,'cases',state.editingId), nc);
-  } else {
-    nc.createdAt = new Date().toISOString();
-    await addDoc(casesRef, nc);
+  document.querySelector('.btn-primary').textContent = 'Salvando...';
+  document.querySelector('.btn-primary').disabled = true;
+
+  try {
+    const caseId = state.editingId || `case_${Date.now()}`;
+    
+    const examUrls = await uploadImages(state.tempExamImages, 'exam', caseId);
+    const reportUrls = await uploadImages(state.tempReportImages, 'report', caseId);
+    let chartUrl = state.tempChartImage;
+    if (chartUrl && !chartUrl.startsWith('http')) {
+      const chartRef = ref(storage, `cases/${caseId}/chart/chart`);
+      await uploadString(chartRef, chartUrl, 'data_url');
+      chartUrl = await getDownloadURL(chartRef);
+    }
+
+    const nc={
+      nome, idade:parseInt(document.getElementById('f-idade').value)||0,
+      ocupacao:document.getElementById('f-ocupacao').value.trim(),
+      rh:document.getElementById('f-rh').value.trim(),
+      tel1:document.getElementById('f-tel1').value.trim(),
+      tel2:document.getElementById('f-tel2').value.trim(),
+      lado:document.getElementById('f-lado').value,
+      data:document.getElementById('f-data').value,
+      diag:document.getElementById('f-diag').value.trim(),
+      resumo:document.getElementById('f-resumo').value.trim(),
+      ef:document.getElementById('f-ef').value.trim(),
+      imagem:document.getElementById('f-imagem').value.trim(),
+      proc:document.getElementById('f-proc').value.trim(),
+      examImages: examUrls,
+      reportImages: reportUrls,
+      chartImage: chartUrl || null,
+      updatedAt: new Date().toISOString()
+    };
+
+    if(state.editingId){
+      await updateDoc(doc(db,'cases',state.editingId), nc);
+    } else {
+      nc.createdAt = new Date().toISOString();
+      await addDoc(casesRef, nc);
+    }
+    state.selectedDate=nc.data;
+    goBack();
+  } catch(err) {
+    console.error('Save error:', err);
+    alert('Erro ao salvar: ' + err.message);
+    setSyncDot('syncing');
+  } finally {
+    document.querySelector('.btn-primary').textContent = 'Salvar caso';
+    document.querySelector('.btn-primary').disabled = false;
   }
-  state.selectedDate=nc.data;
-  goBack();
 }
 
 window.handleChartPhoto = async function(e) {
