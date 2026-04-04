@@ -490,6 +490,8 @@ onSnapshot(q, (snapshot) => {
   state.cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   setSyncDot('synced');
   document.getElementById('loading-overlay').style.display = 'none';
+  // Run cleanse once on first load
+  if (!window._cleansed) { window._cleansed = true; cleanseEletivaPe(); }
   renderCalendar();
   if (state.selectedDate) selectDay(state.selectedDate, false);
 }, (error) => {
@@ -629,7 +631,18 @@ window.editCase = function(id) {
 window.deleteCase = async function(id) {
   if(confirm('Excluir este caso?')){
     setSyncDot('syncing');
+    const c = state.cases.find(x => x.id === id);
     await deleteDoc(doc(db,'cases',id));
+    // Delete from Google Calendar only if created by MK SurgiCal
+    if (c && c.calEventId && c.mkCreated) {
+      try {
+        await fetch('/api/calendar-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', eventId: c.calEventId })
+        });
+      } catch(err) { console.error('Calendar delete error:', err); }
+    }
     goBack();
   }
 }
@@ -691,9 +704,11 @@ window.saveCase = async function() {
       await updateDoc(doc(db,'cases',state.editingId), nc);
     } else {
       nc.createdAt = new Date().toISOString();
+      nc.mkCreated = true;
       const docRef = await addDoc(casesRef, nc);
-      // Create Google Calendar event for new cases
-      createCalendarEvent({...nc, id: docRef.id});
+      // Create Google Calendar event and save the eventId back
+      const calEventId = await createCalendarEvent({...nc, id: docRef.id});
+      if (calEventId) await updateDoc(doc(db,'cases',docRef.id), { calEventId });
     }
     state.selectedDate=nc.data;
     goBack();
@@ -877,11 +892,14 @@ async function createCalendarEvent(caseData) {
     const data = await resp.json();
     if (data.id) {
       showToast('✓ Evento criado no Google Calendar');
+      return data.id;
     } else {
       console.error('Calendar event error:', data);
+      return null;
     }
   } catch(err) {
     console.error('Calendar sync error:', err);
+    return null;
   }
 }
 
@@ -943,6 +961,15 @@ async function importFromCalendar() {
     showToast('Erro ao importar: ' + err.message);
     console.error(err);
   }
+}
+
+async function cleanseEletivaPe() {
+  const toDelete = state.cases.filter(c => c.nome && c.nome.toLowerCase().startsWith('eletiva pé'));
+  if (toDelete.length === 0) return;
+  for (const c of toDelete) {
+    await deleteDoc(doc(db,'cases',c.id));
+  }
+  console.log(`Removidos ${toDelete.length} casos "Eletiva pé"`);
 }
 
 function updateCalBtn() {
