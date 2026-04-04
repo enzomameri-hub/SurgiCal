@@ -186,6 +186,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .google-icon { width: 20px; height: 20px; }
 .login-blocked { background: #fff0f0; border: 0.5px solid #ffcdd2; border-radius: 12px; padding: 14px; margin-top: 14px; font-size: 13px; color: #A32D2D; text-align: center; line-height: 1.5; display: none; }
 .logout-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; font-family: inherit; padding: 4px 0; }
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -219,6 +221,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="topbar-sub">EPM-UNIFESP · Barueri</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <button class="icon-btn" id="cal-btn" onclick="handleCalendarBtn()" title="Google Calendar">📆</button>
       <button class="icon-btn" onclick="openNewCase()">+</button>
       <button class="logout-btn" onclick="signOut()" title="Sair">⎋</button>
     </div>
@@ -369,8 +372,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
-  <div>Carregando SurgiCal...</div>
+  <div>Carregando MK SurgiCal...</div>
 </div>
+<div class="toast" id="toast"></div>
 
 <!-- Firebase SDK -->
 <script type="module">
@@ -687,7 +691,9 @@ window.saveCase = async function() {
       await updateDoc(doc(db,'cases',state.editingId), nc);
     } else {
       nc.createdAt = new Date().toISOString();
-      await addDoc(casesRef, nc);
+      const docRef = await addDoc(casesRef, nc);
+      // Create Google Calendar event for new cases
+      createCalendarEvent({...nc, id: docRef.id});
     }
     state.selectedDate=nc.data;
     goBack();
@@ -847,10 +853,142 @@ window.exportExcel = function() {
   XLSX.writeFile(wb,`SurgiCal_CaseLog_${localToday()}.xlsx`);
 }
 
+// ── GOOGLE CALENDAR ────────────────────────────────────
+let calTokens = JSON.parse(localStorage.getItem('cal_tokens') || 'null');
+
+function showToast(msg, duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function isCalConnected() {
+  return calTokens && calTokens.access_token;
+}
+
+function updateCalBtn() {
+  const btn = document.getElementById('cal-btn');
+  if (!btn) return;
+  btn.title = isCalConnected() ? 'Google Calendar conectado — toque para sincronizar' : 'Conectar Google Calendar';
+  btn.style.background = isCalConnected() ? '#EAF3DE' : '#fff';
+}
+
+window.handleCalendarBtn = function() {
+  if (isCalConnected()) {
+    syncFromCalendar();
+  } else {
+    window.location.href = '/api/calendar-auth';
+  }
+}
+
+async function createCalendarEvent(caseData) {
+  if (!isCalConnected()) return;
+  try {
+    const resp = await fetch('/api/calendar-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        accessToken: calTokens.access_token,
+        refreshToken: calTokens.refresh_token,
+        caseData,
+        calendarId: 'primary'
+      })
+    });
+    const data = await resp.json();
+    if (data.id) {
+      showToast('✓ Evento criado no Google Calendar');
+    } else if (data.error) {
+      console.error('Calendar event error:', data.error);
+    }
+  } catch(err) {
+    console.error('Calendar sync error:', err);
+  }
+}
+
+async function syncFromCalendar() {
+  if (!isCalConnected()) return;
+  showToast('Sincronizando com Google Calendar...', 5000);
+  try {
+    const now = new Date();
+    const future = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const resp = await fetch('/api/calendar-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'fetch',
+        accessToken: calTokens.access_token,
+        refreshToken: calTokens.refresh_token,
+        dateMin: now.toISOString(),
+        dateMax: future.toISOString(),
+        calendarId: 'primary'
+      })
+    });
+    const data = await resp.json();
+    if (data.items) {
+      let added = 0;
+      for (const event of data.items) {
+        const dateStr = event.start?.date || event.start?.dateTime?.split('T')[0];
+        if (!dateStr) continue;
+        const title = event.summary || '';
+        const desc = event.description || '';
+        const exists = state.cases.some(c => c.calEventId === event.id);
+        if (!exists && title) {
+          const nc = {
+            nome: title.split(' — ')[0] || title,
+            lado: title.includes('Direito') ? 'D' : title.includes('Esquerdo') ? 'E' : title.includes('Bilateral') ? 'B' : '',
+            data: dateStr,
+            diag: desc.match(/Diagnóstico: (.+)/)?.[1] || '',
+            proc: desc.match(/Procedimento: (.+)/)?.[1] || '',
+            rh: desc.match(/RH: (.+)/)?.[1] || '',
+            tel1: desc.match(/Tel: (.+)/)?.[1] || '',
+            ocupacao: desc.match(/Ocupação: (.+)/)?.[1] || '',
+            resumo: '', ef: '', imagem: '',
+            examImages: [], reportImages: [], chartImage: null,
+            calEventId: event.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            idade: 0, tel2: ''
+          };
+          await addDoc(casesRef, nc);
+          added++;
+        }
+      }
+      showToast(added > 0 ? `✓ ${added} caso(s) importado(s) do Calendar` : 'Calendário já sincronizado');
+    }
+  } catch(err) {
+    showToast('Erro ao sincronizar');
+    console.error(err);
+  }
+}
+
+// Handle OAuth callback tokens from URL
+function handleCalendarCallback() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('calendar_access_token')) {
+    calTokens = {
+      access_token: params.get('calendar_access_token'),
+      refresh_token: params.get('calendar_refresh_token'),
+      expires_in: params.get('calendar_expires_in')
+    };
+    localStorage.setItem('cal_tokens', JSON.stringify(calTokens));
+    window.history.replaceState({}, '', '/');
+    showToast('✓ Google Calendar conectado!');
+    updateCalBtn();
+  }
+  if (params.get('calendar_error')) {
+    showToast('Erro ao conectar Calendar: ' + params.get('calendar_error'));
+    window.history.replaceState({}, '', '/');
+  }
+}
+
 // ── INIT ───────────────────────────────────────────────
   renderCalendar();
   selectDay(todayStr, false);
   document.getElementById('sheet-date').value=todayStr;
+  handleCalendarCallback();
+  updateCalBtn();
 } // end initApp
 
 </script>
