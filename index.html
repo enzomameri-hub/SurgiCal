@@ -741,9 +741,19 @@ window.handleChartPhoto = async function(e) {
           max_tokens:1000,
           messages:[{role:'user',content:[
             {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-            {type:'text',text:`Analise este prontuário do EPM-UNIFESP e extraia os dados em JSON puro (sem markdown, sem backticks).
+            {type:'text',text:`Analise esta imagem de prontuário médico e extraia os dados em JSON puro (sem markdown, sem backticks).
 
-Mapeamento dos campos:
+TIER 1 — Se o prontuário seguir este modelo estruturado (com marcadores como IDADE, OCUPAÇÃO, QUEIXA, HPMA, EXAME FÍSICO, ALINHAMENTO, ADM, INSPEÇÃO, TESTES, IMAGEM, RX, RNM, HKA, DIAGNÓSTICO, PLANEJAMENTO):
+- IDADE → idade (só o número)
+- OCUPAÇÃO → ocupacao
+- QUEIXA + HPMA → resumo (concatenar, priorizar HPMA; ignorar comorbidades)
+- ALINHAMENTO + ADM + INSPEÇÃO + TESTES → ef (concatenar tudo do exame físico)
+- RX + RNM + HKA → imagem (concatenar achados de imagem)
+- DIAGNÓSTICO FINAL → diag
+- PLANEJAMENTO CIRÚRGICO → proc
+- Lado operado (menciona direito/esquerdo/bilateral) → lado (D, E ou B)
+
+TIER 2 — Se não seguir o modelo acima (prontuário padrão EPM-UNIFESP ou outro formato):
 - "paciente" ou "nome" → nome
 - "idade" → idade (só o número)
 - "prontuário" ou "pront." → rh
@@ -755,12 +765,13 @@ Mapeamento dos campos:
   - exame físico / EF → ef
   - exames de imagem / RX / RNM → imagem
   - conduta / procedimento / cirurgia planejada → proc
-- lado operado (D=direito, E=esquerdo, B=bilateral) → lado
+- lado operado → lado (D, E ou B)
+
+Em ambos os tiers, se encontrar nome do paciente → nome, RH/prontuário → rh, telefones → tel1/tel2.
+Deixe vazio se não encontrar. Para lado use só: D, E, B ou vazio.
 
 Retorne APENAS este JSON:
-{"nome":"","idade":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","resumo":"","ef":"","imagem":"","proc":""}
-
-Deixe vazio se não encontrar. Para lado use só: D, E, B ou vazio.`}
+{"nome":"","idade":"","ocupacao":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","resumo":"","ef":"","imagem":"","proc":""}`}
           ]}]
         })
       });
