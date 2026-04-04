@@ -74,16 +74,31 @@ export default async function handler(req, res) {
     }
  
     if (action === 'fetch') {
-      const params = new URLSearchParams({
-        timeMin: new Date(dateMin||Date.now()).toISOString(),
-        timeMax: new Date(dateMax||Date.now()+120*24*60*60*1000).toISOString(),
-        singleEvents:'true', orderBy:'startTime', maxResults:'200'
-      });
-      const eventsRes = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(targetCalendar)}/events?${params}`,
-        { headers:{'Authorization':`Bearer ${token}`} }
-      );
-      return res.status(eventsRes.ok?200:400).json(await eventsRes.json());
+      let allItems = [];
+      let pageToken = null;
+ 
+      do {
+        const params = new URLSearchParams({
+          timeMin: new Date(dateMin||'2024-01-01').toISOString(),
+          timeMax: new Date(dateMax||'2026-12-31').toISOString(),
+          singleEvents: 'true',
+          orderBy: 'startTime',
+          maxResults: '2500'
+        });
+        if (pageToken) params.set('pageToken', pageToken);
+ 
+        const eventsRes = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(targetCalendar)}/events?${params}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        const eventsData = await eventsRes.json();
+        if (!eventsRes.ok) return res.status(400).json(eventsData);
+ 
+        allItems = allItems.concat(eventsData.items || []);
+        pageToken = eventsData.nextPageToken || null;
+      } while (pageToken);
+ 
+      return res.status(200).json({ items: allItems });
     }
  
     res.status(400).json({ error: 'Invalid action' });
