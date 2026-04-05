@@ -383,7 +383,7 @@ import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
-const ALLOWED_EMAILS = ['enzomameri@gmail.com'];
+const ALLOWED_EMAILS = ['enzomameri@gmail.com','matheuskusterr@gmail.com','vitoriafleal@hotmail.com','isadoracordeirokobayashi@gmail.com','fabricio.infanti@gmail.com','erikatonarellir@gmail.com','rclazzer@gmail.com','isabellekaptzky@gmail.com'];
 
 const firebaseConfig = {
   apiKey: "AIzaSyCI-jCnl8HQ5IicdWLGwJVcyigqxP6_jas",
@@ -593,7 +593,11 @@ window.openDetail = function(id) {
     ${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}
   </div>
   <div class="detail-card">
-    <div class="detail-row"><span class="detail-label">Data</span><span class="detail-value">${formatDate(c.data)}</span></div>
+    <div class="detail-row">
+      <span class="detail-label">Data</span>
+      <input type="date" value="${c.data}" style="font-size:13px;color:#185FA5;font-weight:600;background:transparent;border:none;outline:none;font-family:inherit;cursor:pointer;flex:1;"
+        onchange="updateCaseDate('${c.id}', this.value)" />
+    </div>
     <div class="detail-row"><span class="detail-label">Diagnóstico</span><span class="detail-value">${c.diag||'—'}</span></div>
     <div class="detail-row"><span class="detail-label">Tel 1</span><span class="detail-value">${c.tel1||'—'}</span></div>
     ${c.tel2?`<div class="detail-row"><span class="detail-label">Tel 2</span><span class="detail-value">${c.tel2}</span></div>`:''}
@@ -610,6 +614,30 @@ window.openDetail = function(id) {
   html+=`<div class="detail-action-row"><button class="btn-danger" onclick="deleteCase('${c.id}')">Excluir</button><button class="btn-primary" style="flex:1;" onclick="editCase('${c.id}')">Editar</button></div>`;
   document.getElementById('detail-content').innerHTML=html;
   switchScreen('detail');
+}
+
+window.updateCaseDate = async function(id, newDate) {
+  if (!newDate) return;
+  const c = state.cases.find(x => x.id === id);
+  if (!c) return;
+  setSyncDot('syncing');
+  await updateDoc(doc(db,'cases',id), { data: newDate, updatedAt: new Date().toISOString() });
+  // Update Google Calendar event if MK-created
+  if (c.calEventId && c.mkCreated) {
+    try {
+      await fetch('/api/calendar-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          eventId: c.calEventId,
+          caseData: { ...c, data: newDate }
+        })
+      });
+    } catch(err) { console.error('Calendar update error:', err); }
+  }
+  state.selectedDate = newDate;
+  showToast('✓ Data atualizada');
 }
 
 window.editCase = function(id) {
