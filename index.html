@@ -492,6 +492,8 @@ onSnapshot(q, (snapshot) => {
   document.getElementById('loading-overlay').style.display = 'none';
   // Run cleanse once on first load
   if (!window._cleansed) { window._cleansed = true; cleanseEletivaPe(); }
+  // Run calendar import parse once
+  if (!window._parsed) { window._parsed = true; parseCalendarImports(); }
   renderCalendar();
   if (state.selectedDate) selectDay(state.selectedDate, false);
 }, (error) => {
@@ -559,12 +561,18 @@ function selectDay(dateStr, rerender) {
   document.getElementById('day-cases-view').innerHTML=html;
 }
 
+function isPreAgendamento(nome) {
+  return /pr[eé][- ]?agend/i.test(nome || '');
+}
+
 function caseCardHTML(c) {
   const allImgs=[...(c.examImages||[])];
   const thumbs=allImgs.length>0?`<div class="img-thumbs">${allImgs.slice(0,3).map(img=>`<img class="img-thumb" src="${img}" />`).join('')}</div>`:'';
-  return `<div class="case-card" onclick="openDetail('${c.id}')">
+  const preAgend = isPreAgendamento(c.nome);
+  const cardStyle = preAgend ? 'background:#FFFBEB;border-color:#F59E0B;' : '';
+  return `<div class="case-card" onclick="openDetail('${c.id}')" style="${cardStyle}">
     <div class="case-header">
-      <div><div class="case-name">${c.nome}</div><div class="case-meta-line">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>
+      <div><div class="case-name">${c.nome}${preAgend?` <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px;font-weight:600;">PRÉ-AGEND</span>`:''}</div><div class="case-meta-line">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>
       ${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}
     </div>
     ${c.proc?`<div class="case-proc">${c.proc}</div>`:''}
@@ -588,10 +596,29 @@ window.openNewCase = function(dateStr) {
 
 window.openDetail = function(id) {
   const c=state.cases.find(x=>x.id===id);if(!c)return;
+  const preAgend = isPreAgendamento(c.nome);
   let html=`<div class="detail-name-row">
     <div><div class="detail-name">${c.nome}</div><div class="detail-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>
     ${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}
   </div>
+  ${preAgend ? `
+  <div style="background:#FFFBEB;border:0.5px solid #F59E0B;border-radius:14px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#92400E;">Pré-agendamento</div>
+      <div style="font-size:11px;color:#B45309;margin-top:1px;">Toque para confirmar agendamento</div>
+    </div>
+    <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" onclick="confirmAgendamento('${c.id}');return false;">
+      <span style="position:absolute;inset:0;background:#F59E0B;border-radius:24px;"></span>
+      <span style="position:absolute;height:18px;width:18px;right:3px;bottom:3px;background:white;border-radius:50%;"></span>
+    </label>
+  </div>` : `
+  <div style="background:#f9f9f9;border:0.5px solid #e0e0e0;border-radius:14px;padding:10px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:12px;color:#888;">Marcar como pré-agendamento</div>
+    <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" onclick="togglePreAgendamento('${c.id}');return false;">
+      <span style="position:absolute;inset:0;background:#e0e0e0;border-radius:24px;"></span>
+      <span style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;"></span>
+    </label>
+  </div>`}
   <div class="detail-card">
     <div class="detail-row">
       <span class="detail-label">Data</span>
@@ -614,6 +641,54 @@ window.openDetail = function(id) {
   html+=`<div class="detail-action-row"><button class="btn-danger" onclick="deleteCase('${c.id}')">Excluir</button><button class="btn-primary" style="flex:1;" onclick="editCase('${c.id}')">Editar</button></div>`;
   document.getElementById('detail-content').innerHTML=html;
   switchScreen('detail');
+}
+
+window.confirmAgendamento = async function(id) {
+  const c = state.cases.find(x => x.id === id);
+  if (!c) return;
+  const newNome = c.nome.replace(/pr[eé][- ]?agend[^\s:]*[:\s]*/gi, '').trim();
+  if (confirm(`Confirmar agendamento de ${newNome}?\n\nIsso vai remover o status de pré-agendamento.`)) {
+    setSyncDot('syncing');
+    await updateDoc(doc(db,'cases',id), { nome: newNome, updatedAt: new Date().toISOString() });
+    // For imported Calendar cases — update only the event title
+    if (c.calEventId && !c.mkCreated) {
+      try {
+        await fetch('/api/calendar-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', eventId: c.calEventId, caseData: { ...c, nome: newNome } })
+        });
+      } catch(err) { console.error('Calendar title update error:', err); }
+    }
+    showToast('✓ Agendamento confirmado');
+    goBack();
+  }
+}
+
+// Also handle manually RE-adding pre-agendamento status from edit form
+window.togglePreAgendamento = async function(id) {
+  const c = state.cases.find(x => x.id === id);
+  if (!c) return;
+  const alreadyPre = isPreAgendamento(c.nome);
+  let newNome;
+  if (alreadyPre) {
+    newNome = c.nome.replace(/pr[eé][- ]?agend[^\s:]*[:\s]*/gi, '').trim();
+  } else {
+    newNome = 'Pré-agendamento: ' + c.nome;
+  }
+  setSyncDot('syncing');
+  await updateDoc(doc(db,'cases',id), { nome: newNome, updatedAt: new Date().toISOString() });
+  if (c.calEventId && !c.mkCreated) {
+    try {
+      await fetch('/api/calendar-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', eventId: c.calEventId, caseData: { ...c, nome: newNome } })
+      });
+    } catch(err) { console.error('Calendar toggle error:', err); }
+  }
+  showToast(alreadyPre ? '✓ Status pré-agendamento removido' : '✓ Marcado como pré-agendamento');
+  goBack();
 }
 
 window.updateCaseDate = async function(id, newDate) {
@@ -730,6 +805,17 @@ window.saveCase = async function() {
 
     if(state.editingId){
       await updateDoc(doc(db,'cases',state.editingId), nc);
+      // Update Google Calendar for mkCreated cases
+      const existing = state.cases.find(x => x.id === state.editingId);
+      if (existing && existing.mkCreated && existing.calEventId) {
+        try {
+          await fetch('/api/calendar-sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', eventId: existing.calEventId, caseData: { ...nc, id: state.editingId } })
+          });
+        } catch(err) { console.error('Calendar update error:', err); }
+      }
     } else {
       nc.createdAt = new Date().toISOString();
       nc.mkCreated = true;
@@ -1000,6 +1086,81 @@ async function importFromCalendar() {
     showToast('Erro ao importar: ' + err.message);
     console.error(err);
   }
+}
+
+async function parseCalendarImports() {
+  // Only process cases that: came from Calendar, not MK-created, not yet parsed
+  const toParse = state.cases.filter(c =>
+    c.calEventId && !c.mkCreated && !c.parsed &&
+    c.nome && (c.nome.includes('pront') || c.nome.includes('tel') || /\d{2}\s*\d{4,5}[\s-]\d{4}/.test(c.nome))
+  );
+  if (toParse.length === 0) return;
+
+  console.log(`Parsing ${toParse.length} imported Calendar cases...`);
+
+  for (const c of toParse) {
+    try {
+      const fullText = [c.nome, c.proc].filter(Boolean).join(' | ');
+      const resp = await fetch('/api/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 800,
+          messages: [{
+            role: 'user',
+            content: [{
+              type: 'text',
+              text: `Analise este texto de evento do Google Calendar de uma agenda cirúrgica e extraia os dados em JSON puro (sem markdown, sem backticks).
+
+Texto: "${fullText}"
+
+Regras:
+- Se o nome começa com "REMARCAÇÃO:", "PRÉ-AGENDAMENTO:" ou similar, MANTENHA esse prefixo no nome do paciente
+- nome: prefixo (se houver) + nome do paciente apenas (sem idade, RH, telefone)
+- idade: número de anos se mencionado
+- rh: número após "pront", "prontuário", "RH" ou similar
+- tel1: primeiro telefone encontrado
+- tel2: segundo telefone encontrado (se houver)
+- lado: D (direito), E (esquerdo), B (bilateral) ou vazio
+- diag: diagnóstico se mencionado (ex: gonartrose, lesão LCA, etc.)
+- proc: TUDO que sobrar que não é nome/idade/RH/telefone — o procedimento/observações cirúrgicas completas
+- ocupacao: ocupação se mencionada
+
+Retorne APENAS este JSON:
+{"nome":"","idade":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","proc":"","ocupacao":""}`
+            }]
+          }]
+        })
+      });
+
+      const data = await resp.json();
+      const text = data.content?.find(b => b.type === 'text')?.text || '';
+      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+      const update = { parsed: true, updatedAt: new Date().toISOString() };
+      if (parsed.nome) update.nome = parsed.nome;
+      if (parsed.idade) update.idade = parseInt(parsed.idade) || 0;
+      if (parsed.rh) update.rh = parsed.rh;
+      if (parsed.tel1) update.tel1 = parsed.tel1;
+      if (parsed.tel2) update.tel2 = parsed.tel2;
+      if (parsed.lado) update.lado = parsed.lado;
+      if (parsed.diag) update.diag = parsed.diag;
+      if (parsed.proc) update.proc = parsed.proc;
+      if (parsed.ocupacao) update.ocupacao = parsed.ocupacao;
+
+      await updateDoc(doc(db, 'cases', c.id), update);
+      console.log(`Parsed: ${parsed.nome || c.nome}`);
+
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 300));
+    } catch(err) {
+      console.error(`Parse error for ${c.nome}:`, err);
+      // Mark as parsed anyway to avoid retrying broken cases
+      await updateDoc(doc(db, 'cases', c.id), { parsed: true });
+    }
+  }
+  showToast(`✓ ${toParse.length} casos organizados automaticamente`);
 }
 
 async function cleanseEletivaPe() {
