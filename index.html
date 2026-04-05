@@ -1089,10 +1089,9 @@ async function importFromCalendar() {
 }
 
 async function parseCalendarImports() {
-  // Only process cases that: came from Calendar, not MK-created, not yet parsed
+  // Parse ALL imported Calendar cases not yet parsed and not mkCreated
   const toParse = state.cases.filter(c =>
-    c.calEventId && !c.mkCreated && !c.parsed &&
-    c.nome && (c.nome.includes('pront') || c.nome.includes('tel') || /\d{2}\s*\d{4,5}[\s-]\d{4}/.test(c.nome))
+    c.calEventId && !c.mkCreated && !c.parsed && c.nome && c.nome.length > 5
   );
   if (toParse.length === 0) return;
 
