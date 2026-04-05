@@ -271,6 +271,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="form-section">
         <div class="form-section-title">Cirurgia</div>
         <div class="form-card">
+          <div class="form-row" style="justify-content:space-between;">
+            <span class="form-label">Pré-agendamento</span>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+              <input type="checkbox" id="f-preagend" style="opacity:0;width:0;height:0;" onchange="updatePreAgendToggle(this)">
+              <span id="preagend-track" style="position:absolute;inset:0;background:#e0e0e0;border-radius:24px;transition:.3s;"></span>
+              <span id="preagend-thumb" style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;"></span>
+            </label>
+          </div>
           <div class="form-row"><span class="form-label">Data</span><input class="form-input" id="f-data" type="date" /></div>
           <div class="form-row">
             <span class="form-label">Lado</span>
@@ -350,8 +358,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div id="screen-caselog" class="screen">
     <div class="caselog-wrap">
       <div class="caselog-info">
+        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">De</div>
+            <input type="date" id="log-date-from" style="width:100%;font-size:13px;color:#111;background:#fff;border:0.5px solid #ddd;border-radius:10px;padding:8px 10px;font-family:inherit;" onchange="renderCaseLog()" />
+          </div>
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">Até</div>
+            <input type="date" id="log-date-to" style="width:100%;font-size:13px;color:#111;background:#fff;border:0.5px solid #ddd;border-radius:10px;padding:8px 10px;font-family:inherit;" onchange="renderCaseLog()" />
+          </div>
+        </div>
         <div class="caselog-count" id="log-count">0</div>
-        <div class="caselog-label">casos registrados</div>
+        <div class="caselog-label">casos no período</div>
         <div class="caselog-table-wrap">
           <table class="caselog-table">
             <thead><tr><th>Paciente</th><th>Idade</th><th>RH</th><th>Data</th><th>Diagnóstico</th><th>Procedimento</th></tr></thead>
@@ -510,7 +528,14 @@ window.switchScreen = function(name) {
   const ni = document.getElementById('nav-'+name);
   if (ni) ni.classList.add('active');
   document.getElementById('bottom-nav').style.display = (name==='form'||name==='detail') ? 'none' : 'flex';
-  if (name==='caselog') renderCaseLog();
+  if (name==='caselog') {
+    // Default to current year if no dates set
+    const fromEl = document.getElementById('log-date-from');
+    const toEl = document.getElementById('log-date-to');
+    if (fromEl && !fromEl.value) fromEl.value = `${new Date().getFullYear()}-01-01`;
+    if (toEl && !toEl.value) toEl.value = localToday();
+    renderCaseLog();
+  }
 }
 
 // ── CALENDAR ───────────────────────────────────────────
@@ -582,11 +607,18 @@ function caseCardHTML(c) {
 }
 
 // ── FORM ───────────────────────────────────────────────
+window.updatePreAgendToggle = function(checkbox) {
+  document.getElementById('preagend-track').style.background = checkbox.checked ? '#F59E0B' : '#e0e0e0';
+  document.getElementById('preagend-thumb').style.left = checkbox.checked ? '23px' : '3px';
+}
+
 window.openNewCase = function(dateStr) {
   state.editingId=null;state.tempExamImages=[];state.tempReportImages=[];state.tempChartImage=null;
   ['nome','idade','ocupacao','rh','tel1','tel2','diag','resumo','ef','imagem','proc'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
   document.getElementById('f-lado').value='';
   document.getElementById('f-data').value=dateStr||state.selectedDate||todayStr;
+  const cb = document.getElementById('f-preagend');
+  cb.checked = false; updatePreAgendToggle(cb);
   document.getElementById('exam-preview').innerHTML='';
   document.getElementById('report-preview').innerHTML='';
   document.getElementById('chart-preview').innerHTML='';
@@ -724,6 +756,8 @@ window.editCase = function(id) {
   ['nome','idade','ocupacao','rh','tel1','tel2','lado','data','diag','resumo','ef','imagem','proc'].forEach(f=>{
     const el=document.getElementById('f-'+f);if(el)el.value=c[f]||'';
   });
+  const cb = document.getElementById('f-preagend');
+  cb.checked = isPreAgendamento(c.nome); updatePreAgendToggle(cb);
   renderImagePreview('exam',state.tempExamImages,'exam-preview');
   renderImagePreview('report',state.tempReportImages,'report-preview');
   if(state.tempChartImage){document.getElementById('chart-preview').innerHTML=`<div style="margin-top:8px;"><img src="${state.tempChartImage}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" /></div>`;}
@@ -767,6 +801,10 @@ async function uploadImages(images, folder, caseId) {
 window.saveCase = async function() {
   const nome=document.getElementById('f-nome').value.trim();
   if(!nome){alert('Nome do paciente é obrigatório.');return;}
+  const preAgend = document.getElementById('f-preagend').checked;
+  // Add or remove prefix based on toggle
+  let nomeF = nome.replace(/pr[eé][- ]?agend[^\s:]*[:\s]*/gi,'').trim();
+  if (preAgend && !isPreAgendamento(nomeF)) nomeF = 'Pré-agendamento: ' + nomeF;
   
   setSyncDot('syncing');
   document.querySelector('.btn-primary').textContent = 'Salvando...';
@@ -785,7 +823,7 @@ window.saveCase = async function() {
     }
 
     const nc={
-      nome, idade:parseInt(document.getElementById('f-idade').value)||0,
+      nome: nomeF, idade:parseInt(document.getElementById('f-idade').value)||0,
       ocupacao:document.getElementById('f-ocupacao').value.trim(),
       rh:document.getElementById('f-rh').value.trim(),
       tel1:document.getElementById('f-tel1').value.trim(),
@@ -933,9 +971,9 @@ window.goBack = function() { switchScreen('calendar'); }
 window.generateSheet = function() {
   const dateStr=document.getElementById('sheet-date').value;
   if(!dateStr){alert('Selecione uma data.');return;}
-  const cases=state.cases.filter(c=>c.data===dateStr);
+  const cases=state.cases.filter(c=>c.data===dateStr && !isPreAgendamento(c.nome));
   if(cases.length===0){
-    document.getElementById('sheet-output').innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div>Sem cirurgias para esta data</div></div>`;
+    document.getElementById('sheet-output').innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div>Sem cirurgias confirmadas para esta data</div></div>`;
     document.getElementById('print-btn').style.display='none';
     return;
   }
@@ -963,34 +1001,51 @@ window.generateSheet = function() {
 
 window.exportPDF = function() {
   const dateStr=document.getElementById('sheet-date').value;
-  const cases=state.cases.filter(c=>c.data===dateStr);
+  const cases=state.cases.filter(c=>c.data===dateStr && !isPreAgendamento(c.nome));
+  if(cases.length===0){alert('Sem cirurgias confirmadas para imprimir.');return;}
   const printStyles=`<style>*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}.page{padding:20px;page-break-after:always;}.page:last-child{page-break-after:auto;}.sheet-header{background:#042C53!important;color:white!important;padding:16px;display:flex;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:6px 6px 0 0;}.sheet-title{font-size:16px;font-weight:bold;margin-bottom:2px;color:white;}.sheet-subtitle{font-size:12px;opacity:0.75;color:white;}.case-body{border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;padding:16px;}.sheet-case-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}.sheet-num{width:26px;height:26px;border-radius:50%;background:#EBF3FC;color:#185FA5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.sheet-patient-name{font-size:15px;font-weight:bold;color:#111;}.sheet-patient-sub{font-size:12px;color:#666;margin-top:1px;}.side-badge{font-size:11px;font-weight:bold;padding:3px 8px;border-radius:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.side-D{background:#EBF3FC;color:#0C447C;}.side-E{background:#EEEDFE;color:#3C3489;}.side-B{background:#EAF3DE;color:#3B6D11;}.sheet-contacts{display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;}.sheet-contact{font-size:12px;color:#666;}.sheet-contact span{color:#111;}.sheet-block{margin-top:8px;}.sheet-block-label{font-size:9px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:2px;}.sheet-block-text{font-size:12px;color:#111;line-height:1.5;}.sheet-proc-text{font-size:13px;color:#185FA5;font-weight:bold;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}.img-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;}.img-placeholder{background:#f5f5f5;border:1px dashed #ccc;border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;}@media print{body{padding:0;}@page{margin:12mm;}}</style>`;
   const pagesHTML=cases.map((c,i)=>{
     const hasImages=c.examImages&&c.examImages.length>0;
     const imgHTML=hasImages?`<div class="img-grid">${c.examImages.map(src=>`<img src="${src}" />`).join('')}</div>`:`<div class="img-grid"><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div></div>`;
     return `<div class="page"><div class="sheet-header"><div><div class="sheet-title">Folha de Sala — Joelho</div><div class="sheet-subtitle">EPM-UNIFESP · Barueri · ${formatDate(dateStr)}</div></div><div style="font-size:12px;opacity:0.6;">Caso ${i+1} de ${cases.length}</div></div><div class="case-body"><div class="sheet-case-top"><div class="sheet-num">${i+1}</div><div style="flex:1;"><div class="sheet-patient-name">${c.nome}</div><div class="sheet-patient-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}</div><div class="sheet-contacts">${c.tel1?`<div class="sheet-contact">Tel 1: <span>${c.tel1}</span></div>`:''} ${c.tel2?`<div class="sheet-contact">Tel 2: <span>${c.tel2}</span></div>`:''}</div>${c.diag?`<div class="sheet-block"><div class="sheet-block-label">Diagnóstico</div><div class="sheet-block-text">${c.diag}</div></div>`:''}${c.resumo?`<div class="sheet-block"><div class="sheet-block-label">Resumo clínico</div><div class="sheet-block-text">${c.resumo}</div></div>`:''}${c.ef?`<div class="sheet-block"><div class="sheet-block-label">Exame físico</div><div class="sheet-block-text">${c.ef}</div></div>`:''}${c.imagem?`<div class="sheet-block"><div class="sheet-block-label">Imagem</div><div class="sheet-block-text">${c.imagem}</div></div>`:''}${c.proc?`<div class="sheet-block"><div class="sheet-block-label">Procedimento planejado</div><div class="sheet-proc-text">${c.proc}</div></div>`:''}<div class="sheet-block"><div class="sheet-block-label">Exames de imagem</div>${imgHTML}</div></div></div>`;
   }).join('');
-  const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>SurgiCal — Folha OR ${formatDate(dateStr)}</title>${printStyles}</head><body>${pagesHTML}</body></html>`);
-  win.document.close();
-  win.onload=()=>{win.focus();win.print();};
+  const html=`<!DOCTYPE html><html><head><title>MK SurgiCal — Folha OR ${formatDate(dateStr)}</title>${printStyles}</head><body>${pagesHTML}</body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 
 // ── CASE LOG ───────────────────────────────────────────
+function getCaseLogFiltered() {
+  const from = document.getElementById('log-date-from')?.value || '';
+  const to = document.getElementById('log-date-to')?.value || '';
+  return [...state.cases]
+    .filter(c => !isPreAgendamento(c.nome))
+    .filter(c => !from || c.data >= from)
+    .filter(c => !to || c.data <= to)
+    .sort((a,b) => a.data.localeCompare(b.data));
+}
+
 function renderCaseLog() {
-  const sorted=[...state.cases].sort((a,b)=>a.data.localeCompare(b.data));
-  document.getElementById('log-count').textContent=sorted.length;
-  document.getElementById('log-tbody').innerHTML=sorted.map(c=>`<tr><td style="white-space:nowrap;">${c.nome}</td><td>${c.idade}</td><td>${c.rh}</td><td style="white-space:nowrap;">${formatDate(c.data)}</td><td>${c.diag||'—'}</td><td>${c.proc||'—'}</td></tr>`).join('');
+  const sorted = getCaseLogFiltered();
+  document.getElementById('log-count').textContent = sorted.length;
+  document.getElementById('log-tbody').innerHTML = sorted.map(c=>`<tr><td style="white-space:nowrap;">${c.nome}</td><td>${c.idade}</td><td>${c.rh}</td><td style="white-space:nowrap;">${formatDate(c.data)}</td><td>${c.diag||'—'}</td><td>${c.proc||'—'}</td></tr>`).join('');
 }
 
 window.exportExcel = function() {
-  const sorted=[...state.cases].sort((a,b)=>a.data.localeCompare(b.data));
-  const rows=sorted.map(c=>({'Nome':c.nome,'Idade':c.idade,'RH':c.rh,'Data':formatDate(c.data),'Diagnóstico':c.diag||'','Procedimento':c.proc||''}));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Case Log');
-  XLSX.writeFile(wb,`SurgiCal_CaseLog_${localToday()}.xlsx`);
+  const sorted = getCaseLogFiltered();
+  if (sorted.length === 0) { alert('Nenhum caso no período selecionado.'); return; }
+  const rows = sorted.map(c=>({'Nome':c.nome,'Idade':c.idade,'RH':c.rh,'Data':formatDate(c.data),'Diagnóstico':c.diag||'','Procedimento':c.proc||''}));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Case Log');
+  const from = document.getElementById('log-date-from')?.value || '';
+  const to = document.getElementById('log-date-to')?.value || '';
+  const suffix = from && to ? `_${from}_${to}` : '';
+  XLSX.writeFile(wb, `MKSurgiCal_CaseLog${suffix}.xlsx`);
 }
 
 // ── GOOGLE CALENDAR ────────────────────────────────────
