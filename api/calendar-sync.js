@@ -82,6 +82,27 @@ export default async function handler(req, res) {
       return res.status(delRes.ok ? 200 : 400).json({ deleted: delRes.ok });
     }
  
+    if (action === 'update') {
+      const { eventId, caseData } = req.body;
+      const { nome, lado, diag, proc, data, rh, tel1, ocupacao } = caseData;
+      const sideLabel = lado==='D'?'Direito':lado==='E'?'Esquerdo':lado==='B'?'Bilateral':'';
+      const description = [
+        rh?`RH: ${rh}`:'', ocupacao?`Ocupação: ${ocupacao}`:'',
+        tel1?`Tel: ${tel1}`:'', diag?`Diagnóstico: ${diag}`:'', proc?`Procedimento: ${proc}`:''
+      ].filter(Boolean).join('\n');
+      const event = {
+        summary: `${nome}${sideLabel?` — ${sideLabel}`:''}`,
+        description,
+        start: { date: data },
+        end: { date: data }
+      };
+      const updRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(targetCalendar)}/events/${eventId}`,
+        { method:'PUT', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body:JSON.stringify(event) }
+      );
+      return res.status(updRes.ok?200:400).json(await updRes.json());
+    }
+ 
     if (action === 'fetch') {
       let allItems = [];
       let pageToken = null;
@@ -116,3 +137,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+ 
