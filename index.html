@@ -1026,7 +1026,7 @@ function getCaseLogFiltered() {
     .sort((a,b) => a.data.localeCompare(b.data));
 }
 
-function renderCaseLog() {
+window.renderCaseLog = function() {
   const sorted = getCaseLogFiltered();
   document.getElementById('log-count').textContent = sorted.length;
   document.getElementById('log-cards').innerHTML = sorted.length === 0
