@@ -669,6 +669,9 @@ window.openDetail = function(id) {
   if(c.reportImages&&c.reportImages.length>0){html+=`<div class="detail-card"><div class="detail-section-title">📄 Relatório Cirúrgico</div><div class="detail-img-grid">${c.reportImages.map(img=>`<img src="${img}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" />`).join('')}</div></div>`;}
   if(c.chartImage){html+=`<div class="detail-card"><div class="detail-section-title">📋 Prontuário</div><div class="detail-img-grid"><img src="${c.chartImage}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;" /></div></div>`;}
   html+=`<div class="detail-action-row"><button class="btn-danger" onclick="deleteCase('${c.id}')">Excluir</button><button class="btn-primary" style="flex:1;" onclick="editCase('${c.id}')">Editar</button></div>`;
+  if(c.mkCreated && c.createdBy) {
+    html+=`<div style="text-align:center;padding:8px 0 4px;font-size:11px;color:#bbb;">Criado por ${c.createdBy}</div>`;
+  }
   document.getElementById('detail-content').innerHTML=html;
   switchScreen('detail');
 }
@@ -855,6 +858,7 @@ window.saveCase = async function() {
     } else {
       nc.createdAt = new Date().toISOString();
       nc.mkCreated = true;
+      nc.createdBy = auth.currentUser?.email || '';
       const docRef = await addDoc(casesRef, nc);
       // Create Google Calendar event and save the eventId back
       const calEventId = await createCalendarEvent({...nc, id: docRef.id});
