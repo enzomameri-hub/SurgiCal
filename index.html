@@ -11,18 +11,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; }
 #app { max-width: 430px; margin: 0 auto; min-height: 100vh; background: #f2f2f7; position: relative; }
-
+ 
 /* TOPBAR */
 .topbar { background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
 .topbar-surgi { font-size: 20px; font-weight: 600; color: #111; letter-spacing: -0.5px; }
 .topbar-cal { font-size: 20px; font-weight: 600; color: #185FA5; letter-spacing: -0.5px; }
 .topbar-sub { font-size: 11px; color: #888; margin-top: 1px; }
 .icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 0.5px solid #ddd; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-
+ 
 /* SCREENS */
 .screen { display: none; }
 .screen.active { display: block; }
-
+ 
 /* CALENDAR */
 .month-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #fff; border-bottom: 0.5px solid #e0e0e0; }
 .month-label { font-size: 15px; font-weight: 600; color: #111; }
@@ -41,7 +41,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .day-cases-title { font-size: 14px; font-weight: 600; color: #111; }
 .add-btn { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: #185FA5; border: 0.5px solid #185FA5; background: transparent; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
 .cases-list { padding: 0 16px 100px; display: flex; flex-direction: column; gap: 10px; }
-
+ 
 /* CASE CARD */
 .case-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 14px; cursor: pointer; }
 .case-card:active { opacity: 0.85; }
@@ -58,7 +58,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .img-thumb { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 0.5px solid #e0e0e0; }
 .empty-state { text-align: center; padding: 40px 24px; color: #888; font-size: 14px; }
 .empty-icon { font-size: 28px; margin-bottom: 10px; }
-
+ 
 /* FORM */
 .screen-form { padding: 0 16px 130px; }
 .form-section { margin-top: 14px; }
@@ -73,7 +73,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .form-textarea { flex: 1; font-size: 13px; color: #111; background: transparent; border: none; outline: none; padding: 12px 0; font-family: inherit; resize: none; min-height: 68px; line-height: 1.5; width: 100%; }
 .form-textarea::placeholder { color: #bbb; }
 .form-select { flex: 1; font-size: 14px; color: #111; background: transparent; border: none; outline: none; padding: 10px 0; font-family: inherit; appearance: none; cursor: pointer; }
-
+ 
 /* IMAGE SECTIONS */
 .img-section { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; overflow: hidden; }
 .img-section-header { padding: 10px 14px; border-bottom: 0.5px solid #f0f0f0; }
@@ -88,13 +88,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .preview-img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 0.5px solid #e0e0e0; display: block; }
 .preview-remove { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: #E24B4A; border: none; cursor: pointer; font-size: 11px; color: white; display: flex; align-items: center; justify-content: center; }
 .ai-extracting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; padding: 8px 0; }
-
+ 
 /* SAVE BAR */
 .save-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 0.5px solid #e0e0e0; padding: 12px 16px; display: flex; gap: 10px; z-index: 200; }
 .btn-primary { flex: 1; background: #185FA5; color: white; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .btn-secondary { background: transparent; color: #666; border: 0.5px solid #ddd; border-radius: 12px; padding: 13px 18px; font-size: 15px; cursor: pointer; font-family: inherit; }
 .btn-danger { background: transparent; color: #A32D2D; border: 0.5px solid #A32D2D; border-radius: 12px; padding: 13px 18px; font-size: 15px; cursor: pointer; font-family: inherit; }
-
+ 
 /* OR SHEET */
 .or-sheet-wrap { padding: 0 16px 110px; }
 .or-date-row { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 12px 14px; margin-top: 14px; display: flex; align-items: center; gap: 10px; }
@@ -122,7 +122,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .img-placeholder { background: #f5f5f5; border: 0.5px dashed #ccc; border-radius: 6px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; text-align: center; }
 .export-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 0.5px solid #e0e0e0; padding: 12px 16px; z-index: 200; }
 .export-pdf-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #042C53; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
-
+ 
 /* CASE LOG */
 .caselog-wrap { padding: 0 16px 100px; }
 .caselog-info { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 16px; margin-top: 14px; }
@@ -134,17 +134,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .caselog-table td { padding: 8px; border-bottom: 0.5px solid #f0f0f0; color: #111; vertical-align: top; }
 .caselog-table tr:last-child td { border-bottom: none; }
 .export-xl-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #185FA5; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 14px; }
-
+ 
 /* BOTTOM NAV */
 .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 0.5px solid #e0e0e0; display: flex; z-index: 150; }
 .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0 12px; cursor: pointer; gap: 3px; border: none; background: transparent; }
 .nav-icon { font-size: 20px; }
 .nav-label { font-size: 10px; color: #888; }
 .nav-item.active .nav-label { color: #185FA5; font-weight: 600; }
-
+ 
 /* BACK BTN */
 .back-btn { display: flex; align-items: center; gap: 5px; font-size: 14px; color: #185FA5; background: none; border: none; cursor: pointer; padding: 12px 16px 4px; font-family: inherit; }
-
+ 
 /* DETAIL */
 .detail-wrap { padding: 0 16px 100px; }
 .detail-name-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 10px; }
@@ -158,18 +158,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .detail-img-grid { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px; }
 .detail-section-title { padding: 10px 14px 6px; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 0.5px solid #f0f0f0; }
 .detail-action-row { display: flex; gap: 10px; padding: 8px 0 4px; }
-
+ 
 /* LOADING */
 .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 12px; font-size: 14px; color: #666; }
 .spinner { width: 32px; height: 32px; border: 2.5px solid #e0e0e0; border-top-color: #185FA5; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
+ 
 /* SYNC INDICATOR */
 .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; display: inline-block; margin-left: 6px; }
 .sync-dot.synced { background: #639922; }
 .sync-dot.syncing { background: #EF9F27; animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
+ 
 /* LOGIN */
 .login-screen { position: fixed; inset: 0; background: #f2f2f7; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 32px; }
 .login-logo { display: flex; align-items: baseline; gap: 0; margin-bottom: 8px; }
@@ -209,7 +209,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 </div>
-
+ 
 <div id="app" style="display:none;">
   <div class="topbar">
     <div>
@@ -226,7 +226,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="logout-btn" onclick="signOut()" title="Sair">⎋</button>
     </div>
   </div>
-
+ 
   <div id="screen-calendar" class="screen active">
     <div class="month-nav">
       <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
@@ -236,7 +236,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="cal-grid" id="cal-grid"></div>
     <div id="day-cases-view"></div>
   </div>
-
+ 
   <div id="screen-form" class="screen">
     <button class="back-btn" onclick="goBack()">← Voltar</button>
     <div class="screen-form">
@@ -335,12 +335,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="btn-primary" onclick="saveCase()">Salvar caso</button>
     </div>
   </div>
-
+ 
   <div id="screen-detail" class="screen">
     <button class="back-btn" onclick="goBack()">← Voltar</button>
     <div class="detail-wrap" id="detail-content"></div>
   </div>
-
+ 
   <div id="screen-sheet" class="screen">
     <div class="or-sheet-wrap">
       <div class="or-date-row">
@@ -355,7 +355,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="export-pdf-btn" id="print-btn" onclick="exportPDF()" style="display:none;flex:1;">🖨 Imprimir</button>
     </div>
   </div>
-
+ 
   <div id="screen-caselog" class="screen">
     <div class="caselog-wrap">
       <div class="caselog-info">
@@ -379,29 +379,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="export-xl-btn" onclick="exportExcel()">⬇ Exportar Excel</button>
     </div>
   </div>
-
+ 
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-item active" id="nav-calendar" onclick="switchScreen('calendar')"><span class="nav-icon">📅</span><span class="nav-label">Agenda</span></button>
     <button class="nav-item" id="nav-sheet" onclick="switchScreen('sheet')"><span class="nav-icon">📋</span><span class="nav-label">Folha OR</span></button>
     <button class="nav-item" id="nav-caselog" onclick="switchScreen('caselog')"><span class="nav-icon">📊</span><span class="nav-label">Case Log</span></button>
   </nav>
 </div>
-
+ 
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
   <div>Carregando MK SurgiCal...</div>
 </div>
 <div class="toast" id="toast"></div>
-
+ 
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
-
+ 
 const ALLOWED_EMAILS = ['enzomameri@gmail.com','matheuskusterr@gmail.com','vitoriafleal@hotmail.com','isadoracordeirokobayashi@gmail.com','fabricio.infanti@gmail.com','erikatonarellir@gmail.com','rclazzer@gmail.com','isabellekaptzky@gmail.com'];
-
+ 
 const firebaseConfig = {
   apiKey: "AIzaSyCI-jCnl8HQ5IicdWLGwJVcyigqxP6_jas",
   authDomain: "surgical-61650.firebaseapp.com",
@@ -410,13 +410,13 @@ const firebaseConfig = {
   messagingSenderId: "877156144811",
   appId: "1:877156144811:web:bf1b504a0b544f928cc9ee"
 };
-
+ 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
 const storage = getStorage(firebaseApp);
 const provider = new GoogleAuthProvider();
-
+ 
 // ── AUTH ───────────────────────────────────────────────
 window.signInWithGoogle = async function() {
   document.getElementById('login-blocked').style.display = 'none';
@@ -431,13 +431,13 @@ window.signInWithGoogle = async function() {
     console.error('Login error:', e);
   }
 }
-
+ 
 window.signOut = async function() {
   if (confirm('Sair do SurgiCal?')) {
     await firebaseSignOut(auth);
   }
 }
-
+ 
 onAuthStateChanged(auth, (user) => {
   if (user && ALLOWED_EMAILS.includes(user.email)) {
     document.getElementById('login-screen').style.display = 'none';
@@ -450,16 +450,16 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById('loading-overlay').style.display = 'none';
   }
 });
-
+ 
 let appInitialized = false;
 function initApp() {
   if (appInitialized) return;
   appInitialized = true;
-
+ 
 // ── UTILS ──────────────────────────────────────────────
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAYS_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-
+ 
 function localToday() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -483,10 +483,10 @@ function setSyncDot(status) {
   const dot = document.getElementById('sync-dot');
   dot.className = 'sync-dot ' + status;
 }
-
+ 
 const todayStr = localToday();
 const todayParts = parseLocalDate(todayStr);
-
+ 
 // ── STATE ──────────────────────────────────────────────
 let state = {
   currentYear: todayParts.y,
@@ -498,11 +498,11 @@ let state = {
   tempChartImage: null,
   cases: []
 };
-
+ 
 // ── FIRESTORE REALTIME SYNC ────────────────────────────
 const casesRef = collection(db, 'cases');
 const q = query(casesRef, orderBy('data', 'asc'));
-
+ 
 onSnapshot(q, (snapshot) => {
   state.cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   setSyncDot('synced');
@@ -518,7 +518,7 @@ onSnapshot(q, (snapshot) => {
   setSyncDot('syncing');
   document.getElementById('loading-overlay').style.display = 'none';
 });
-
+ 
 // ── SCREENS ────────────────────────────────────────────
 window.switchScreen = function(name) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -536,7 +536,7 @@ window.switchScreen = function(name) {
     renderCaseLog();
   }
 }
-
+ 
 // ── CALENDAR ───────────────────────────────────────────
 window.changeMonth = function(dir) {
   state.currentMonth += dir;
@@ -544,7 +544,7 @@ window.changeMonth = function(dir) {
   if (state.currentMonth<0){state.currentMonth=11;state.currentYear--;}
   renderCalendar();
 }
-
+ 
 function renderCalendar() {
   const y=state.currentYear, m=state.currentMonth;
   document.getElementById('month-label').textContent = MONTHS[m]+' '+y;
@@ -571,7 +571,7 @@ function renderCalendar() {
     grid.appendChild(div);
   });
 }
-
+ 
 function selectDay(dateStr, rerender) {
   state.selectedDate=dateStr;
   if(rerender!==false) renderCalendar();
@@ -584,11 +584,11 @@ function selectDay(dateStr, rerender) {
   }
   document.getElementById('day-cases-view').innerHTML=html;
 }
-
+ 
 function isPreAgendamento(nome) {
   return /pr[eé][- ]?agend/i.test(nome || '');
 }
-
+ 
 function caseCardHTML(c) {
   const allImgs=[...(c.examImages||[])];
   const thumbs=allImgs.length>0?`<div class="img-thumbs">${allImgs.slice(0,3).map(img=>`<img class="img-thumb" src="${img}" />`).join('')}</div>`:'';
@@ -604,11 +604,10 @@ function caseCardHTML(c) {
     ${thumbs}
   </div>`;
 }
-
+ 
 // ── FORM ───────────────────────────────────────────────
 window.calcIdadeFromNasc = function(val) {
   if (!val) return;
-  // Accept dd/mm/aaaa or dd-mm-aaaa
   const clean = val.replace(/[-\.]/g, '/');
   const parts = clean.split('/');
   if (parts.length !== 3) return;
@@ -623,10 +622,12 @@ window.calcIdadeFromNasc = function(val) {
     if (el) el.value = age;
   }
 }
+ 
+window.updatePreAgendToggle = function(checkbox) {
   document.getElementById('preagend-track').style.background = checkbox.checked ? '#F59E0B' : '#e0e0e0';
   document.getElementById('preagend-thumb').style.left = checkbox.checked ? '23px' : '3px';
 }
-
+ 
 window.openNewCase = function(dateStr) {
   state.editingId=null;state.tempExamImages=[];state.tempReportImages=[];state.tempChartImage=null;
   ['nome','idade','nasc','ocupacao','rh','tel1','tel2','diag','resumo','ef','imagem','proc'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
@@ -640,7 +641,7 @@ window.openNewCase = function(dateStr) {
   document.getElementById('ai-status').innerHTML='';
   switchScreen('form');
 }
-
+ 
 window.openDetail = function(id) {
   const c=state.cases.find(x=>x.id===id);if(!c)return;
   const preAgend = isPreAgendamento(c.nome);
@@ -693,7 +694,7 @@ window.openDetail = function(id) {
   document.getElementById('detail-content').innerHTML=html;
   switchScreen('detail');
 }
-
+ 
 window.confirmAgendamento = async function(id) {
   const c = state.cases.find(x => x.id === id);
   if (!c) return;
@@ -715,7 +716,7 @@ window.confirmAgendamento = async function(id) {
     goBack();
   }
 }
-
+ 
 // Also handle manually RE-adding pre-agendamento status from edit form
 window.togglePreAgendamento = async function(id) {
   const c = state.cases.find(x => x.id === id);
@@ -741,7 +742,7 @@ window.togglePreAgendamento = async function(id) {
   showToast(alreadyPre ? '✓ Status pré-agendamento removido' : '✓ Marcado como pré-agendamento');
   goBack();
 }
-
+ 
 window.updateCaseDate = async function(id, newDate) {
   if (!newDate) return;
   const c = state.cases.find(x => x.id === id);
@@ -765,7 +766,7 @@ window.updateCaseDate = async function(id, newDate) {
   state.selectedDate = newDate;
   showToast('✓ Data atualizada');
 }
-
+ 
 window.editCase = function(id) {
   const c=state.cases.find(x=>x.id===id);if(!c)return;
   state.editingId=id;
@@ -783,7 +784,7 @@ window.editCase = function(id) {
   document.getElementById('ai-status').innerHTML='';
   switchScreen('form');
 }
-
+ 
 window.deleteCase = async function(id) {
   if(confirm('Excluir este caso?')){
     setSyncDot('syncing');
@@ -802,7 +803,7 @@ window.deleteCase = async function(id) {
     goBack();
   }
 }
-
+ 
 // ── STORAGE HELPERS ────────────────────────────────────
 async function uploadImages(images, folder, caseId) {
   const urls = [];
@@ -816,7 +817,7 @@ async function uploadImages(images, folder, caseId) {
   }
   return urls;
 }
-
+ 
 window.saveCase = async function() {
   const nome=document.getElementById('f-nome').value.trim();
   if(!nome){alert('Nome do paciente é obrigatório.');return;}
@@ -828,7 +829,7 @@ window.saveCase = async function() {
   setSyncDot('syncing');
   document.querySelector('.btn-primary').textContent = 'Salvando...';
   document.querySelector('.btn-primary').disabled = true;
-
+ 
   try {
     const caseId = state.editingId || `case_${Date.now()}`;
     
@@ -840,7 +841,7 @@ window.saveCase = async function() {
       await uploadString(chartRef, chartUrl, 'data_url');
       chartUrl = await getDownloadURL(chartRef);
     }
-
+ 
     const nc={
       nome: nomeF, idade:parseInt(document.getElementById('f-idade').value)||0,
       nasc: document.getElementById('f-nasc').value.trim(),
@@ -860,7 +861,7 @@ window.saveCase = async function() {
       chartImage: chartUrl || null,
       updatedAt: new Date().toISOString()
     };
-
+ 
     if(state.editingId){
       await updateDoc(doc(db,'cases',state.editingId), nc);
       // Update Google Calendar for mkCreated cases
@@ -894,7 +895,7 @@ window.saveCase = async function() {
     document.querySelector('.btn-primary').disabled = false;
   }
 }
-
+ 
 window.handleChartPhoto = async function(e) {
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -915,7 +916,7 @@ window.handleChartPhoto = async function(e) {
           messages:[{role:'user',content:[
             {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
             {type:'text',text:`Analise esta imagem de prontuário médico e extraia os dados em JSON puro (sem markdown, sem backticks).
-
+ 
 TIER 1 — Se o prontuário seguir este modelo estruturado (com marcadores como IDADE, OCUPAÇÃO, QUEIXA, HPMA, EXAME FÍSICO, ALINHAMENTO, ADM, INSPEÇÃO, TESTES, IMAGEM, RX, RNM, HKA, DIAGNÓSTICO, PLANEJAMENTO):
 - IDADE → idade (só o número)
 - NASCIMENTO → nasc (data de nascimento no formato dd/mm/aaaa)
@@ -926,7 +927,7 @@ TIER 1 — Se o prontuário seguir este modelo estruturado (com marcadores como 
 - DIAGNÓSTICO FINAL → diag
 - PLANEJAMENTO CIRÚRGICO → proc
 - Lado operado (menciona direito/esquerdo/bilateral) → lado (D, E ou B)
-
+ 
 TIER 2 — Se não seguir o modelo acima (prontuário padrão EPM-UNIFESP ou outro formato):
 - "paciente" ou "nome" → nome
 - "idade" → idade (só o número)
@@ -940,10 +941,10 @@ TIER 2 — Se não seguir o modelo acima (prontuário padrão EPM-UNIFESP ou out
   - exames de imagem / RX / RNM → imagem
   - conduta / procedimento / cirurgia planejada → proc
 - lado operado → lado (D, E ou B)
-
+ 
 Em ambos os tiers, se encontrar nome do paciente → nome, RH/prontuário → rh, telefones → tel1/tel2.
 Deixe vazio se não encontrar. Para lado use só: D, E, B ou vazio.
-
+ 
 Retorne APENAS este JSON:
 {"nome":"","idade":"","nasc":"","ocupacao":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","resumo":"","ef":"","imagem":"","proc":""}`}
           ]}]
@@ -966,7 +967,7 @@ Retorne APENAS este JSON:
   };
   reader.readAsDataURL(file);
 }
-
+ 
 window.handleImages = function(e,type) {
   const arr=type==='exam'?state.tempExamImages:state.tempReportImages;
   const previewId=type==='exam'?'exam-preview':'report-preview';
@@ -976,20 +977,20 @@ window.handleImages = function(e,type) {
     reader.readAsDataURL(file);
   });
 }
-
+ 
 function renderImagePreview(type,arr,previewId) {
   document.getElementById(previewId).innerHTML=arr.map((img,i)=>
     `<div class="preview-item"><img class="preview-img" src="${img}" /><button class="preview-remove" onclick="removeImage('${type}',${i})">×</button></div>`
   ).join('');
 }
-
+ 
 window.removeImage = function(type,i) {
   if(type==='exam'){state.tempExamImages.splice(i,1);renderImagePreview('exam',state.tempExamImages,'exam-preview');}
   else{state.tempReportImages.splice(i,1);renderImagePreview('report',state.tempReportImages,'report-preview');}
 }
-
+ 
 window.goBack = function() { switchScreen('calendar'); }
-
+ 
 // ── OR SHEET ───────────────────────────────────────────
 window.generateSheet = function() {
   const dateStr=document.getElementById('sheet-date').value;
@@ -1021,7 +1022,7 @@ window.generateSheet = function() {
   document.getElementById('sheet-output').innerHTML=html;
   document.getElementById('print-btn').style.display='flex';
 }
-
+ 
 window.exportPDF = function() {
   const dateStr=document.getElementById('sheet-date').value;
   const cases=state.cases.filter(c=>c.data===dateStr && !isPreAgendamento(c.nome));
@@ -1039,7 +1040,7 @@ window.exportPDF = function() {
   a.href=url; a.target='_blank'; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
-
+ 
 // ── CASE LOG ───────────────────────────────────────────
 function getCaseLogFiltered() {
   const from = document.getElementById('log-date-from')?.value || '';
@@ -1050,7 +1051,7 @@ function getCaseLogFiltered() {
     .filter(c => !to || c.data <= to)
     .sort((a,b) => a.data.localeCompare(b.data));
 }
-
+ 
 window.renderCaseLog = function() {
   const sorted = getCaseLogFiltered();
   document.getElementById('log-count').textContent = sorted.length;
@@ -1062,7 +1063,7 @@ window.renderCaseLog = function() {
         <span style="font-size:14px;color:#111;line-height:1.3;">${c.nome}</span>
       </div>`).join('');
 }
-
+ 
 window.exportExcel = function() {
   const sorted = getCaseLogFiltered();
   if (sorted.length === 0) { alert('Nenhum caso no período selecionado.'); return; }
@@ -1076,7 +1077,7 @@ window.exportExcel = function() {
   const suffix = from && to ? `_${from}_${to}` : '';
   XLSX.writeFile(wb, `MKSurgiCal_CaseLog${suffix}.xlsx`);
 }
-
+ 
 // ── GOOGLE CALENDAR ────────────────────────────────────
 function showToast(msg, duration=3000) {
   const t = document.getElementById('toast');
@@ -1084,13 +1085,13 @@ function showToast(msg, duration=3000) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), duration);
 }
-
+ 
 window.handleCalendarBtn = async function() {
   if (confirm('Importar eventos do Google Calendar da ortopbarueri@gmail.com para o MK SurgiCal?\n\nIsso é recomendado fazer apenas uma vez.')) {
     await importFromCalendar();
   }
 }
-
+ 
 async function createCalendarEvent(caseData) {
   try {
     const resp = await fetch('/api/calendar-sync', {
@@ -1111,7 +1112,7 @@ async function createCalendarEvent(caseData) {
     return null;
   }
 }
-
+ 
 async function importFromCalendar() {
   showToast('Importando do Google Calendar...', 10000);
   try {
@@ -1137,7 +1138,7 @@ async function importFromCalendar() {
       if (!dateStr) continue;
       const title = event.summary || '';
       if (!title) continue;
-
+ 
       // Only import Wednesday (3) and Thursday (4)
       const [y,m,d] = dateStr.split('-').map(Number);
       const dow = new Date(y, m-1, d).getDay();
@@ -1171,16 +1172,16 @@ async function importFromCalendar() {
     console.error(err);
   }
 }
-
+ 
 async function parseCalendarImports() {
   // Parse ALL imported Calendar cases not yet parsed and not mkCreated
   const toParse = state.cases.filter(c =>
     c.calEventId && !c.mkCreated && !c.parsed && c.nome && c.nome.length > 5
   );
   if (toParse.length === 0) return;
-
+ 
   console.log(`Parsing ${toParse.length} imported Calendar cases...`);
-
+ 
   for (const c of toParse) {
     try {
       const fullText = [c.nome, c.proc].filter(Boolean).join(' | ');
@@ -1195,9 +1196,9 @@ async function parseCalendarImports() {
             content: [{
               type: 'text',
               text: `Analise este texto de evento do Google Calendar de uma agenda cirúrgica e extraia os dados em JSON puro (sem markdown, sem backticks).
-
+ 
 Texto: "${fullText}"
-
+ 
 Regras:
 - Se o nome começa com "REMARCAÇÃO:", "PRÉ-AGENDAMENTO:" ou similar, MANTENHA esse prefixo no nome do paciente
 - nome: prefixo (se houver) + nome do paciente apenas (sem idade, RH, telefone)
@@ -1209,18 +1210,18 @@ Regras:
 - diag: diagnóstico se mencionado (ex: gonartrose, lesão LCA, etc.)
 - proc: TUDO que sobrar que não é nome/idade/RH/telefone — o procedimento/observações cirúrgicas completas
 - ocupacao: ocupação se mencionada
-
+ 
 Retorne APENAS este JSON:
 {"nome":"","idade":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","proc":"","ocupacao":""}`
             }]
           }]
         })
       });
-
+ 
       const data = await resp.json();
       const text = data.content?.find(b => b.type === 'text')?.text || '';
       const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-
+ 
       const update = { parsed: true, updatedAt: new Date().toISOString() };
       if (parsed.nome) update.nome = parsed.nome;
       if (parsed.idade) update.idade = parseInt(parsed.idade) || 0;
@@ -1231,10 +1232,10 @@ Retorne APENAS este JSON:
       if (parsed.diag) update.diag = parsed.diag;
       if (parsed.proc) update.proc = parsed.proc;
       if (parsed.ocupacao) update.ocupacao = parsed.ocupacao;
-
+ 
       await updateDoc(doc(db, 'cases', c.id), update);
       console.log(`Parsed: ${parsed.nome || c.nome}`);
-
+ 
       // Small delay to avoid rate limiting
       await new Promise(r => setTimeout(r, 300));
     } catch(err) {
@@ -1245,7 +1246,7 @@ Retorne APENAS este JSON:
   }
   showToast(`✓ ${toParse.length} casos organizados automaticamente`);
 }
-
+ 
 async function cleanseEletivaPe() {
   const toDelete = state.cases.filter(c => c.nome && c.nome.toLowerCase().startsWith('eletiva pé'));
   if (toDelete.length === 0) return;
@@ -1254,23 +1255,24 @@ async function cleanseEletivaPe() {
   }
   console.log(`Removidos ${toDelete.length} casos "Eletiva pé"`);
 }
-
+ 
 function updateCalBtn() {
   const btn = document.getElementById('cal-btn');
   if (btn) btn.title = 'Importar do Google Calendar';
 }
-
+ 
 // ── INIT ───────────────────────────────────────────────
   renderCalendar();
   selectDay(todayStr, false);
   document.getElementById('sheet-date').value=todayStr;
   updateCalBtn();
 } // end initApp
-
+ 
 </script>
-
+ 
 <!-- XLSX for Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
+ 
 </body>
 </html>
+ 
