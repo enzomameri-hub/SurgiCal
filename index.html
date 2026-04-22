@@ -1127,6 +1127,8 @@ window.removeImage = function(type,i) {
   else{state.tempPostopImages.splice(i,1);renderImagePreview('postop',state.tempPostopImages,'postop-preview');}
 }
 
+window.goBack = function() { switchScreen('calendar'); }
+
 window.openLightbox = function(src) {
   const lb = document.getElementById('lightbox');
   document.getElementById('lightbox-img').src = src;
