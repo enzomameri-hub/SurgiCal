@@ -265,7 +265,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="form-section">
         <div class="form-section-title">Paciente</div>
         <div class="form-card">
-          <div class="form-row"><span class="form-label">Nome</span><input class="form-input" id="f-nome" placeholder="Nome completo" /></div>
+          <div class="form-row"><span class="form-label">Nome</span><input class="form-input" id="f-nome" placeholder="Nome completo" oninput="delete this.dataset.fromChart" /></div>
           <div class="form-row"><span class="form-label">Idade</span><input class="form-input" id="f-idade" placeholder="34" type="number" style="max-width:60px;" /><span style="font-size:13px;color:#888;">anos</span></div>
           <div class="form-row"><span class="form-label">Nascimento</span><input class="form-input" id="f-nasc" placeholder="dd/mm/aaaa" type="text" onchange="calcIdadeFromNasc(this.value)" /></div>
           <div class="form-row"><span class="form-label">Ocupação</span><input class="form-input" id="f-ocupacao" placeholder="ex: Atleta, Professor, Aposentado" /></div>
@@ -705,7 +705,7 @@ window.updatePreAgendToggle = function(checkbox) {
 
 window.openNewCase = function(dateStr) {
   state.editingId=null;state.tempExamImages=[];state.tempReportImages=[];state.tempPostopImages=[];state.tempChartImage=null;
-  ['nome','idade','nasc','ocupacao','rh','tel1','tel2','diag','resumo','ef','imagem','proc'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  ['nome','idade','nasc','ocupacao','rh','tel1','tel2','diag','resumo','ef','imagem','proc'].forEach(f=>{const el=document.getElementById('f-'+f);if(el){el.value='';delete el.dataset.fromChart;}});
   document.getElementById('f-lado').value='';
   document.getElementById('f-data').value=dateStr||state.selectedDate||todayStr;
   const cb = document.getElementById('f-preagend');
@@ -1096,6 +1096,8 @@ Retorne APENAS este JSON:
       });
       if(parsed.nasc) calcIdadeFromNasc(parsed.nasc);
       if(parsed.lado){const el=document.getElementById('f-lado');if(el&&!el.value)el.value=parsed.lado;}
+      // Mark nome as filled from chart so op report doesn't overwrite it
+      if(parsed.nome) document.getElementById('f-nome').dataset.fromChart = 'true';
       document.getElementById('ai-status').innerHTML=`<div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#3B6D11;padding:6px 0;"><span>✓</span> Dados extraídos — revise e ajuste se necessário</div>`;
     } catch(err) {
       console.error('OCR error:',err);
@@ -1110,9 +1112,58 @@ window.handleImages = function(e,type) {
   const previewId=type==='exam'?'exam-preview':type==='report'?'report-preview':'postop-preview';
   Array.from(e.target.files).forEach(file=>{
     const reader=new FileReader();
-    reader.onload=ev=>{arr.push(ev.target.result);renderImagePreview(type,arr,previewId);};
+    reader.onload=ev=>{
+      arr.push(ev.target.result);
+      renderImagePreview(type,arr,previewId);
+      // Auto-extract header data from op report if fields are empty
+      if (type==='report') extractFromOpReport(ev.target.result, file.type||'image/jpeg');
+    };
     reader.readAsDataURL(file);
   });
+}
+
+async function extractFromOpReport(dataUrl, mediaType) {
+  try {
+    const base64 = dataUrl.split(',')[1];
+    const resp = await fetch('/api/ocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: `Este é o cabeçalho de um relatório cirúrgico do Hospital de Barueri. Extraia APENAS os campos do cabeçalho em JSON puro (sem markdown):
+- "Nome:" ou "Nome Social:" → nome (nome completo do paciente)
+- "Idade:" → idade (só o número de anos, ex: 20)
+- "Dt.Nasc." ou "Data Nasc" → nasc (formato dd/mm/aaaa)
+- "Pront. Local" ou "Prontuário" → rh (só o número)
+
+Retorne APENAS: {"nome":"","idade":"","nasc":"","rh":""}
+Deixe vazio se não encontrar.` }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.find(b=>b.type==='text')?.text||'';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    // Nome: fill if empty OR if manually typed (not from chart)
+    const nomeEl = document.getElementById('f-nome');
+    if (parsed.nome && (!nomeEl.value.trim() || !nomeEl.dataset.fromChart)) {
+      nomeEl.value = parsed.nome;
+      delete nomeEl.dataset.fromChart;
+    }
+    // Other fields: only fill if empty
+    if (parsed.idade && !document.getElementById('f-idade').value) document.getElementById('f-idade').value = parsed.idade;
+    if (parsed.nasc && !document.getElementById('f-nasc').value.trim()) {
+      document.getElementById('f-nasc').value = parsed.nasc;
+      calcIdadeFromNasc(parsed.nasc);
+    }
+    if (parsed.rh && !document.getElementById('f-rh').value.trim()) document.getElementById('f-rh').value = parsed.rh;
+    if (parsed.nome || parsed.rh) showToast('✓ Dados extraídos do relatório cirúrgico');
+  } catch(err) {
+    console.error('Op report OCR error:', err);
+  }
 }
 
 function renderImagePreview(type,arr,previewId) {
@@ -1232,9 +1283,19 @@ window.renderCaseLog = function() {
 window.exportExcel = function() {
   const sorted = getCaseLogFiltered();
   if (sorted.length === 0) { alert('Nenhum caso no período selecionado.'); return; }
-  const rows = sorted.map(c=>({'Nome':c.nome,'Idade':c.idade,'RH':c.rh,'Data':formatDate(c.data),'Diagnóstico':c.diag||'','Procedimento':c.proc||''}));
+  const rows = sorted.map(c=>({
+    'Nome': c.nome,
+    'Idade': c.idade,
+    'RH': c.rh,
+    'Data': formatDate(c.data),
+    'Diagnóstico': c.diag||'',
+    'Procedimento': c.proc||'',
+    'Imagem Pré-op': (c.examImages&&c.examImages.length>0) ? 'SIM' : '',
+    'Relatório Cirúrgico': (c.reportImages&&c.reportImages.length>0) ? 'SIM' : '',
+    'Imagem Pós-op': (c.postopImages&&c.postopImages.length>0) ? 'SIM' : '',
+  }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50}];
+  ws['!cols'] = [{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50},{wch:14},{wch:20},{wch:14}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Case Log');
   const from = document.getElementById('log-date-from')?.value || '';
