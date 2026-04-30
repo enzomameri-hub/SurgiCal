@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
@@ -189,6 +190,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
 .toast.show { opacity: 1; }
 </style>
+
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -409,6 +411,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <div class="toast" id="toast"></div>
 
 <!-- Lightbox -->
+
 <div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
   <div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:14px 18px;position:absolute;top:0;left:0;">
     <button onclick="closeLightbox()" style="background:rgba(255,255,255,0.15);color:white;border:none;border-radius:20px;padding:8px 16px;font-size:14px;cursor:pointer;font-family:inherit;">✕ Fechar</button>
@@ -418,13 +421,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 </div>
 
 <!-- Firebase SDK -->
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
-const ALLOWED_EMAILS = ['enzomameri@gmail.com','matheuskusterr@gmail.com','vitoriafleal@hotmail.com','isadoracordeirokobayashi@gmail.com','fabricio.infanti@gmail.com','erikatonarellir@gmail.com','rclazzer@gmail.com','isabellekaptzky@gmail.com'];
+const ALLOWED_EMAILS = ['enzomameri@gmail.com','matheuskusterr@gmail.com','vitoriaferreiraleal15@gmail.com','isadoracordeirokobayashi@gmail.com','fabricio.infanti@gmail.com','erikatonarellir@gmail.com','rclazzer@gmail.com','isabellekaptzky@gmail.com'];
 
 const firebaseConfig = {
   apiKey: "AIzaSyCI-jCnl8HQ5IicdWLGwJVcyigqxP6_jas",
@@ -788,7 +792,14 @@ window.openDetail = function(id) {
   if(c.chartImage){html+=`<div class="detail-card"><div class="detail-section-title">📋 Prontuário</div><div class="detail-img-grid"><img src="${c.chartImage}" onclick="openLightbox('${c.chartImage}')" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:0.5px solid #e0e0e0;cursor:pointer;" /></div></div>`;}
   html+=`<div class="detail-action-row"><button class="btn-danger" onclick="deleteCase('${c.id}')">Excluir</button><button class="btn-primary" style="flex:1;" onclick="editCase('${c.id}')">Editar</button></div>`;
   if(c.mkCreated && c.createdBy) {
-    html+=`<div style="text-align:center;padding:8px 0 4px;font-size:11px;color:#bbb;">Criado por ${c.createdBy}</div>`;
+    const createdDate = c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '';
+    const confirmedLine = c.confirmedAt
+      ? `<div>Agendamento confirmado por ${c.confirmedBy||'—'} em ${new Date(c.confirmedAt).toLocaleDateString('pt-BR')}</div>`
+      : '';
+    html+=`<div style="text-align:center;padding:8px 0 4px;font-size:11px;color:#bbb;line-height:1.8;">
+      <div>Criado por ${c.createdBy}${createdDate ? ` em ${createdDate}` : ''}</div>
+      ${confirmedLine}
+    </div>`;
   }
   document.getElementById('detail-content').innerHTML=html;
   switchScreen('detail');
@@ -834,7 +845,9 @@ window.confirmAgendamento = async function(id) {
   const newNome = c.nome.replace(/pr[eé][- ]?agend[^\s:]*[:\s]*/gi, '').trim();
   if (confirm(`Confirmar agendamento de ${newNome}?\n\nIsso vai remover o status de pré-agendamento.`)) {
     setSyncDot('syncing');
-    await updateDoc(doc(db,'cases',id), { nome: newNome, updatedAt: new Date().toISOString() });
+    const confirmedAt = new Date().toISOString();
+    const confirmedBy = auth.currentUser?.email || '';
+    await updateDoc(doc(db,'cases',id), { nome: newNome, confirmedAt, confirmedBy, updatedAt: confirmedAt });
     // For imported Calendar cases — update only the event title
     if (c.calEventId && !c.mkCreated) {
       try {
@@ -1244,192 +1257,193 @@ window.exportPDF = function() {
   const cases=state.cases.filter(c=>c.data===dateStr && !isPreAgendamento(c.nome));
   if(cases.length===0){alert('Sem cirurgias confirmadas para imprimir.');return;}
   const printStyles=`<style>*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}html,body{height:100%;}@page{margin:12mm;size:A4;}.page{height:calc(297mm - 24mm);display:flex;flex-direction:column;page-break-after:always;}.page:last-child{page-break-after:auto;}.sheet-header{background:#042C53!important;color:white!important;padding:16px;display:flex;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:6px 6px 0 0;flex-shrink:0;}.sheet-title{font-size:16px;font-weight:bold;margin-bottom:2px;color:white;}.sheet-subtitle{font-size:12px;opacity:0.75;color:white;}.case-body{border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;padding:16px;display:flex;flex-direction:column;flex:1;overflow:hidden;}.sheet-case-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-shrink:0;}.sheet-num{width:26px;height:26px;border-radius:50%;background:#EBF3FC;color:#185FA5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.sheet-patient-name{font-size:15px;font-weight:bold;color:#111;}.sheet-patient-sub{font-size:12px;color:#666;margin-top:1px;}.side-badge{font-size:11px;font-weight:bold;padding:3px 8px;border-radius:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.side-D{background:#EBF3FC;color:#0C447C;}.side-E{background:#EEEDFE;color:#3C3489;}.side-B{background:#EAF3DE;color:#3B6D11;}.sheet-contacts{display:flex;gap:16px;margin-top:4px;flex-wrap:wrap;flex-shrink:0;}.sheet-contact{font-size:12px;color:#666;}.sheet-contact span{color:#111;}.sheet-block{margin-top:6px;flex-shrink:0;}.sheet-block-label{font-size:9px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:2px;}.sheet-block-text{font-size:12px;color:#111;line-height:1.4;}.sheet-proc-text{font-size:13px;color:#185FA5;font-weight:bold;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.img-section{margin-top:8px;flex:1;display:flex;flex-direction:column;min-height:0;}.img-section-label{font-size:9px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex:1;min-height:0;}.img-grid img{width:100%;height:100%;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;display:block;}.img-placeholder{background:#f5f5f5;border:1px dashed #ccc;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;}@media print{body{padding:0;}}</style>`;
-  const pagesHTML=cases.map((c,i)=>{
-    const hasImages=c.examImages&&c.examImages.length>0;
-    const imgHTML=hasImages?`<div class="img-grid">${c.examImages.map(src=>`<img src="${src}" />`).join('')}</div>`:`<div class="img-grid"><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div></div>`;
-    return `<div class="page"><div class="sheet-header"><div><div class="sheet-title">Folha de Sala — Joelho</div><div class="sheet-subtitle">EPM-UNIFESP · Barueri · ${formatDate(dateStr)}</div></div><div style="font-size:12px;opacity:0.6;">Caso ${i+1} de ${cases.length}</div></div><div class="case-body"><div class="sheet-case-top"><div class="sheet-num">${i+1}</div><div style="flex:1;"><div class="sheet-patient-name">${c.nome}</div><div class="sheet-patient-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}</div><div class="sheet-contacts">${c.tel1?`<div class="sheet-contact">Tel 1: <span>${c.tel1}</span></div>`:''} ${c.tel2?`<div class="sheet-contact">Tel 2: <span>${c.tel2}</span></div>`:''}</div>${c.diag?`<div class="sheet-block"><div class="sheet-block-label">Diagnóstico</div><div class="sheet-block-text">${c.diag}</div></div>`:''}${c.resumo?`<div class="sheet-block"><div class="sheet-block-label">Resumo clínico</div><div class="sheet-block-text">${c.resumo}</div></div>`:''}${c.ef?`<div class="sheet-block"><div class="sheet-block-label">Exame físico</div><div class="sheet-block-text">${c.ef}</div></div>`:''}${c.imagem?`<div class="sheet-block"><div class="sheet-block-label">Imagem</div><div class="sheet-block-text">${c.imagem}</div></div>`:''}${c.proc?`<div class="sheet-block"><div class="sheet-block-label">Procedimento planejado</div><div class="sheet-proc-text">${c.proc}</div></div>`:''}<div class="img-section"><div class="img-section-label">Exames de imagem</div>${imgHTML}</div></div></div>`;
-  }).join('');
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MK SurgiCal — Folha OR ${formatDate(dateStr)}</title>${printStyles}</head><body>${pagesHTML}</body></html>`;
-  const blob=new Blob([html],{type:'text/html'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.target='_blank'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),5000);
+
+const pagesHTML=cases.map((c,i)=>{
+const hasImages=c.examImages&&c.examImages.length>0;
+const imgHTML=hasImages?`<div class="img-grid">${c.examImages.map(src=>`<img src="${src}" />`).join('')}</div>`:`<div class="img-grid"><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div><div class="img-placeholder">RX/RNM</div></div>`;
+return `<div class="page"><div class="sheet-header"><div><div class="sheet-title">Folha de Sala — Joelho</div><div class="sheet-subtitle">EPM-UNIFESP · Barueri · ${formatDate(dateStr)}</div></div><div style="font-size:12px;opacity:0.6;">Caso ${i+1} de ${cases.length}</div></div><div class="case-body"><div class="sheet-case-top"><div class="sheet-num">${i+1}</div><div style="flex:1;"><div class="sheet-patient-name">${c.nome}</div><div class="sheet-patient-sub">${c.idade} anos${c.ocupacao?` · ${c.ocupacao}`:''} · RH ${c.rh}</div></div>${c.lado?`<span class="side-badge side-${c.lado}">${sideLabel(c.lado)}</span>`:''}</div><div class="sheet-contacts">${c.tel1?`<div class="sheet-contact">Tel 1: <span>${c.tel1}</span></div>`:''} ${c.tel2?`<div class="sheet-contact">Tel 2: <span>${c.tel2}</span></div>`:''}</div>${c.diag?`<div class="sheet-block"><div class="sheet-block-label">Diagnóstico</div><div class="sheet-block-text">${c.diag}</div></div>`:''}${c.resumo?`<div class="sheet-block"><div class="sheet-block-label">Resumo clínico</div><div class="sheet-block-text">${c.resumo}</div></div>`:''}${c.ef?`<div class="sheet-block"><div class="sheet-block-label">Exame físico</div><div class="sheet-block-text">${c.ef}</div></div>`:''}${c.imagem?`<div class="sheet-block"><div class="sheet-block-label">Imagem</div><div class="sheet-block-text">${c.imagem}</div></div>`:''}${c.proc?`<div class="sheet-block"><div class="sheet-block-label">Procedimento planejado</div><div class="sheet-proc-text">${c.proc}</div></div>`:''}<div class="img-section"><div class="img-section-label">Exames de imagem</div>${imgHTML}</div></div></div>`;
+}).join(’’);
+const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MK SurgiCal — Folha OR ${formatDate(dateStr)}</title>${printStyles}</head><body>${pagesHTML}</body></html>`;
+const blob=new Blob([html],{type:‘text/html’});
+const url=URL.createObjectURL(blob);
+const a=document.createElement(‘a’);
+a.href=url; a.target=’_blank’; a.click();
+setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 
 // ── CASE LOG ───────────────────────────────────────────
 function getCaseLogFiltered() {
-  const from = document.getElementById('log-date-from')?.value || '';
-  const to = document.getElementById('log-date-to')?.value || '';
-  return [...state.cases]
-    .filter(c => !isPreAgendamento(c.nome))
-    .filter(c => !from || c.data >= from)
-    .filter(c => !to || c.data <= to)
-    .sort((a,b) => a.data.localeCompare(b.data));
+const from = document.getElementById(‘log-date-from’)?.value || ‘’;
+const to = document.getElementById(‘log-date-to’)?.value || ‘’;
+return […state.cases]
+.filter(c => !isPreAgendamento(c.nome))
+.filter(c => !from || c.data >= from)
+.filter(c => !to || c.data <= to)
+.sort((a,b) => a.data.localeCompare(b.data));
 }
 
 window.renderCaseLog = function() {
-  const sorted = getCaseLogFiltered();
-  document.getElementById('log-count').textContent = sorted.length;
-  document.getElementById('log-cards').innerHTML = sorted.length === 0
-    ? `<div style="text-align:center;padding:24px;color:#bbb;font-size:14px;">Nenhum caso no período</div>`
-    : sorted.map(c => `
-      <div style="display:flex;align-items:baseline;gap:12px;padding:9px 0;border-bottom:0.5px solid #f0f0f0;">
-        <span style="font-size:12px;color:#888;white-space:nowrap;min-width:82px;">${formatDate(c.data)}</span>
-        <span style="font-size:14px;color:#111;line-height:1.3;">${c.nome}</span>
-      </div>`).join('');
+const sorted = getCaseLogFiltered();
+document.getElementById(‘log-count’).textContent = sorted.length;
+document.getElementById(‘log-cards’).innerHTML = sorted.length === 0
+? `<div style="text-align:center;padding:24px;color:#bbb;font-size:14px;">Nenhum caso no período</div>`
+: sorted.map(c => ` <div style="display:flex;align-items:baseline;gap:12px;padding:9px 0;border-bottom:0.5px solid #f0f0f0;"> <span style="font-size:12px;color:#888;white-space:nowrap;min-width:82px;">${formatDate(c.data)}</span> <span style="font-size:14px;color:#111;line-height:1.3;">${c.nome}</span> </div>`).join(’’);
 }
 
 window.exportExcel = function() {
-  const sorted = getCaseLogFiltered();
-  if (sorted.length === 0) { alert('Nenhum caso no período selecionado.'); return; }
-  const rows = sorted.map(c=>({
-    'Nome': c.nome,
-    'Idade': c.idade,
-    'RH': c.rh,
-    'Data': formatDate(c.data),
-    'Diagnóstico': c.diag||'',
-    'Procedimento': c.proc||'',
-    'Imagem Pré-op': (c.examImages&&c.examImages.length>0) ? 'SIM' : '',
-    'Relatório Cirúrgico': (c.reportImages&&c.reportImages.length>0) ? 'SIM' : '',
-    'Imagem Pós-op': (c.postopImages&&c.postopImages.length>0) ? 'SIM' : '',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50},{wch:14},{wch:20},{wch:14}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Case Log');
-  const from = document.getElementById('log-date-from')?.value || '';
-  const to = document.getElementById('log-date-to')?.value || '';
-  const suffix = from && to ? `_${from}_${to}` : '';
-  XLSX.writeFile(wb, `MKSurgiCal_CaseLog${suffix}.xlsx`);
+const sorted = getCaseLogFiltered();
+if (sorted.length === 0) { alert(‘Nenhum caso no período selecionado.’); return; }
+const rows = sorted.map(c=>({
+‘Nome’: c.nome,
+‘Idade’: c.idade,
+‘RH’: c.rh,
+‘Data’: formatDate(c.data),
+‘Diagnóstico’: c.diag||’’,
+‘Procedimento’: c.proc||’’,
+‘Imagem Pré-op’: (c.examImages&&c.examImages.length>0) ? ‘SIM’ : ‘’,
+‘Relatório Cirúrgico’: (c.reportImages&&c.reportImages.length>0) ? ‘SIM’ : ‘’,
+‘Imagem Pós-op’: (c.postopImages&&c.postopImages.length>0) ? ‘SIM’ : ‘’,
+}));
+const ws = XLSX.utils.json_to_sheet(rows);
+ws[’!cols’] = [{wch:30},{wch:8},{wch:12},{wch:12},{wch:40},{wch:50},{wch:14},{wch:20},{wch:14}];
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, ‘Case Log’);
+const from = document.getElementById(‘log-date-from’)?.value || ‘’;
+const to = document.getElementById(‘log-date-to’)?.value || ‘’;
+const suffix = from && to ? `_${from}_${to}` : ‘’;
+XLSX.writeFile(wb, `MKSurgiCal_CaseLog${suffix}.xlsx`);
 }
 
 // ── GOOGLE CALENDAR ────────────────────────────────────
 function showToast(msg, duration=3000) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
+const t = document.getElementById(‘toast’);
+t.textContent = msg;
+t.classList.add(‘show’);
+setTimeout(() => t.classList.remove(‘show’), duration);
 }
 
 window.handleCalendarBtn = async function() {
-  if (confirm('Importar eventos do Google Calendar da ortopbarueri@gmail.com para o MK SurgiCal?\n\nIsso é recomendado fazer apenas uma vez.')) {
-    await importFromCalendar();
-  }
+if (confirm(‘Importar eventos do Google Calendar da ortopbarueri@gmail.com para o MK SurgiCal?\n\nIsso é recomendado fazer apenas uma vez.’)) {
+await importFromCalendar();
+}
 }
 
 async function createCalendarEvent(caseData) {
-  try {
-    const resp = await fetch('/api/calendar-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create', caseData })
-    });
-    const data = await resp.json();
-    if (data.id) {
-      showToast('✓ Evento criado no Google Calendar');
-      return data.id;
-    } else {
-      console.error('Calendar event error:', data);
-      return null;
-    }
-  } catch(err) {
-    console.error('Calendar sync error:', err);
-    return null;
-  }
+try {
+const resp = await fetch(’/api/calendar-sync’, {
+method: ‘POST’,
+headers: { ‘Content-Type’: ‘application/json’ },
+body: JSON.stringify({ action: ‘create’, caseData })
+});
+const data = await resp.json();
+if (data.id) {
+showToast(‘✓ Evento criado no Google Calendar’);
+return data.id;
+} else {
+console.error(‘Calendar event error:’, data);
+return null;
+}
+} catch(err) {
+console.error(‘Calendar sync error:’, err);
+return null;
+}
 }
 
 async function importFromCalendar() {
-  showToast('Importando do Google Calendar...', 10000);
-  try {
-    const now = new Date('2024-01-01').toISOString();
-    const future = new Date('2026-12-31').toISOString();
-    const resp = await fetch('/api/calendar-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'fetch', dateMin: now, dateMax: future })
-    });
-    const data = await resp.json();
-    if (data.error) {
-      showToast('Erro: ' + data.error);
-      return;
-    }
-    if (!data.items || data.items.length === 0) {
-      showToast('Nenhum evento encontrado na agenda');
-      return;
-    }
-    let added = 0;
-    for (const event of data.items) {
-      const dateStr = event.start?.date || event.start?.dateTime?.split('T')[0];
-      if (!dateStr) continue;
-      const title = event.summary || '';
-      if (!title) continue;
+showToast(‘Importando do Google Calendar…’, 10000);
+try {
+const now = new Date(‘2024-01-01’).toISOString();
+const future = new Date(‘2026-12-31’).toISOString();
+const resp = await fetch(’/api/calendar-sync’, {
+method: ‘POST’,
+headers: { ‘Content-Type’: ‘application/json’ },
+body: JSON.stringify({ action: ‘fetch’, dateMin: now, dateMax: future })
+});
+const data = await resp.json();
+if (data.error) {
+showToast(’Erro: ’ + data.error);
+return;
+}
+if (!data.items || data.items.length === 0) {
+showToast(‘Nenhum evento encontrado na agenda’);
+return;
+}
+let added = 0;
+for (const event of data.items) {
+const dateStr = event.start?.date || event.start?.dateTime?.split(‘T’)[0];
+if (!dateStr) continue;
+const title = event.summary || ‘’;
+if (!title) continue;
 
-      // Only import Wednesday (3) and Thursday (4)
-      const [y,m,d] = dateStr.split('-').map(Number);
-      const dow = new Date(y, m-1, d).getDay();
-      if (dow !== 3 && dow !== 4) continue;
-      const desc = event.description || '';
-      const exists = state.cases.some(c => c.calEventId === event.id);
-      if (!exists) {
-        const nc = {
-          nome: title.split(' — ')[0] || title,
-          lado: title.includes('Direito')||title.includes(' D)')||title.includes(' D ') ? 'D' : title.includes('Esquerdo')||title.includes(' E)')||title.includes(' E ') ? 'E' : '',
-          data: dateStr,
-          diag: desc.match(/Diagnóstico: (.+)/)?.[1] || '',
-          proc: desc.match(/Procedimento: (.+)/)?.[1] || title,
-          rh: desc.match(/RH: (.+)/)?.[1] || '',
-          tel1: desc.match(/Tel: (.+)/)?.[1] || '',
-          ocupacao: desc.match(/Ocupação: (.+)/)?.[1] || '',
-          resumo: '', ef: '', imagem: '',
-          examImages: [], reportImages: [], chartImage: null,
-          calEventId: event.id,
-          idade: 0, tel2: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        await addDoc(casesRef, nc);
-        added++;
-      }
-    }
-    showToast(added > 0 ? `✓ ${added} caso(s) importado(s) do Calendar` : 'Todos os eventos já estavam no MK SurgiCal');
-  } catch(err) {
-    showToast('Erro ao importar: ' + err.message);
-    console.error(err);
+```
+  // Only import Wednesday (3) and Thursday (4)
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dow = new Date(y, m-1, d).getDay();
+  if (dow !== 3 && dow !== 4) continue;
+  const desc = event.description || '';
+  const exists = state.cases.some(c => c.calEventId === event.id);
+  if (!exists) {
+    const nc = {
+      nome: title.split(' — ')[0] || title,
+      lado: title.includes('Direito')||title.includes(' D)')||title.includes(' D ') ? 'D' : title.includes('Esquerdo')||title.includes(' E)')||title.includes(' E ') ? 'E' : '',
+      data: dateStr,
+      diag: desc.match(/Diagnóstico: (.+)/)?.[1] || '',
+      proc: desc.match(/Procedimento: (.+)/)?.[1] || title,
+      rh: desc.match(/RH: (.+)/)?.[1] || '',
+      tel1: desc.match(/Tel: (.+)/)?.[1] || '',
+      ocupacao: desc.match(/Ocupação: (.+)/)?.[1] || '',
+      resumo: '', ef: '', imagem: '',
+      examImages: [], reportImages: [], chartImage: null,
+      calEventId: event.id,
+      idade: 0, tel2: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await addDoc(casesRef, nc);
+    added++;
   }
+}
+showToast(added > 0 ? `✓ ${added} caso(s) importado(s) do Calendar` : 'Todos os eventos já estavam no MK SurgiCal');
+```
+
+} catch(err) {
+showToast(’Erro ao importar: ’ + err.message);
+console.error(err);
+}
 }
 
 async function parseCalendarImports() {
-  // Parse ALL imported Calendar cases not yet parsed and not mkCreated
-  const toParse = state.cases.filter(c =>
-    c.calEventId && !c.mkCreated && !c.parsed && c.nome && c.nome.length > 5
-  );
-  if (toParse.length === 0) return;
+// Parse ALL imported Calendar cases not yet parsed and not mkCreated
+const toParse = state.cases.filter(c =>
+c.calEventId && !c.mkCreated && !c.parsed && c.nome && c.nome.length > 5
+);
+if (toParse.length === 0) return;
 
-  console.log(`Parsing ${toParse.length} imported Calendar cases...`);
+console.log(`Parsing ${toParse.length} imported Calendar cases...`);
 
-  for (const c of toParse) {
-    try {
-      const fullText = [c.nome, c.proc].filter(Boolean).join(' | ');
-      const resp = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 800,
-          messages: [{
-            role: 'user',
-            content: [{
-              type: 'text',
-              text: `Analise este texto de evento do Google Calendar de uma agenda cirúrgica e extraia os dados em JSON puro (sem markdown, sem backticks).
+for (const c of toParse) {
+try {
+const fullText = [c.nome, c.proc].filter(Boolean).join(’ | ‘);
+const resp = await fetch(’/api/ocr’, {
+method: ‘POST’,
+headers: { ‘Content-Type’: ‘application/json’ },
+body: JSON.stringify({
+model: ‘claude-sonnet-4-20250514’,
+max_tokens: 800,
+messages: [{
+role: ‘user’,
+content: [{
+type: ‘text’,
+text: `Analise este texto de evento do Google Calendar de uma agenda cirúrgica e extraia os dados em JSON puro (sem markdown, sem backticks).
 
-Texto: "${fullText}"
+Texto: “${fullText}”
 
 Regras:
-- Se o nome começa com "REMARCAÇÃO:", "PRÉ-AGENDAMENTO:" ou similar, MANTENHA esse prefixo no nome do paciente
+
+- Se o nome começa com “REMARCAÇÃO:”, “PRÉ-AGENDAMENTO:” ou similar, MANTENHA esse prefixo no nome do paciente
 - nome: prefixo (se houver) + nome do paciente apenas (sem idade, RH, telefone)
 - idade: número de anos se mencionado
-- rh: número após "pront", "prontuário", "RH" ou similar
+- rh: número após “pront”, “prontuário”, “RH” ou similar
 - tel1: primeiro telefone encontrado
 - tel2: segundo telefone encontrado (se houver)
 - lado: D (direito), E (esquerdo), B (bilateral) ou vazio
@@ -1438,65 +1452,69 @@ Regras:
 - ocupacao: ocupação se mencionada
 
 Retorne APENAS este JSON:
-{"nome":"","idade":"","rh":"","tel1":"","tel2":"","lado":"","diag":"","proc":"","ocupacao":""}`
-            }]
-          }]
-        })
-      });
+{“nome”:””,“idade”:””,“rh”:””,“tel1”:””,“tel2”:””,“lado”:””,“diag”:””,“proc”:””,“ocupacao”:””}`
+}]
+}]
+})
+});
 
-      const data = await resp.json();
-      const text = data.content?.find(b => b.type === 'text')?.text || '';
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+```
+  const data = await resp.json();
+  const text = data.content?.find(b => b.type === 'text')?.text || '';
+  const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
 
-      const update = { parsed: true, updatedAt: new Date().toISOString() };
-      if (parsed.nome) update.nome = parsed.nome;
-      if (parsed.idade) update.idade = parseInt(parsed.idade) || 0;
-      if (parsed.rh) update.rh = parsed.rh;
-      if (parsed.tel1) update.tel1 = parsed.tel1;
-      if (parsed.tel2) update.tel2 = parsed.tel2;
-      if (parsed.lado) update.lado = parsed.lado;
-      if (parsed.diag) update.diag = parsed.diag;
-      if (parsed.proc) update.proc = parsed.proc;
-      if (parsed.ocupacao) update.ocupacao = parsed.ocupacao;
+  const update = { parsed: true, updatedAt: new Date().toISOString() };
+  if (parsed.nome) update.nome = parsed.nome;
+  if (parsed.idade) update.idade = parseInt(parsed.idade) || 0;
+  if (parsed.rh) update.rh = parsed.rh;
+  if (parsed.tel1) update.tel1 = parsed.tel1;
+  if (parsed.tel2) update.tel2 = parsed.tel2;
+  if (parsed.lado) update.lado = parsed.lado;
+  if (parsed.diag) update.diag = parsed.diag;
+  if (parsed.proc) update.proc = parsed.proc;
+  if (parsed.ocupacao) update.ocupacao = parsed.ocupacao;
 
-      await updateDoc(doc(db, 'cases', c.id), update);
-      console.log(`Parsed: ${parsed.nome || c.nome}`);
+  await updateDoc(doc(db, 'cases', c.id), update);
+  console.log(`Parsed: ${parsed.nome || c.nome}`);
 
-      // Small delay to avoid rate limiting
-      await new Promise(r => setTimeout(r, 300));
-    } catch(err) {
-      console.error(`Parse error for ${c.nome}:`, err);
-      // Mark as parsed anyway to avoid retrying broken cases
-      await updateDoc(doc(db, 'cases', c.id), { parsed: true });
-    }
-  }
-  showToast(`✓ ${toParse.length} casos organizados automaticamente`);
+  // Small delay to avoid rate limiting
+  await new Promise(r => setTimeout(r, 300));
+} catch(err) {
+  console.error(`Parse error for ${c.nome}:`, err);
+  // Mark as parsed anyway to avoid retrying broken cases
+  await updateDoc(doc(db, 'cases', c.id), { parsed: true });
+}
+```
+
+}
+showToast(`✓ ${toParse.length} casos organizados automaticamente`);
 }
 
 async function cleanseEletivaPe() {
-  const toDelete = state.cases.filter(c => c.nome && c.nome.toLowerCase().startsWith('eletiva pé'));
-  if (toDelete.length === 0) return;
-  for (const c of toDelete) {
-    await deleteDoc(doc(db,'cases',c.id));
-  }
-  console.log(`Removidos ${toDelete.length} casos "Eletiva pé"`);
+const toDelete = state.cases.filter(c => c.nome && c.nome.toLowerCase().startsWith(‘eletiva pé’));
+if (toDelete.length === 0) return;
+for (const c of toDelete) {
+await deleteDoc(doc(db,‘cases’,c.id));
+}
+console.log(`Removidos ${toDelete.length} casos "Eletiva pé"`);
 }
 
 function updateCalBtn() {
-  const btn = document.getElementById('cal-btn');
-  if (btn) btn.title = 'Importar do Google Calendar';
+const btn = document.getElementById(‘cal-btn’);
+if (btn) btn.title = ‘Importar do Google Calendar’;
 }
 
 // ── INIT ───────────────────────────────────────────────
-  renderCalendar();
-  selectDay(todayStr, false);
-  document.getElementById('sheet-date').value=todayStr;
-  updateCalBtn();
+renderCalendar();
+selectDay(todayStr, false);
+document.getElementById(‘sheet-date’).value=todayStr;
+updateCalBtn();
 } // end initApp
 
 </script>
 
 <!-- XLSX for Excel export -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 </body>
